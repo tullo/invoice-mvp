@@ -6,7 +6,7 @@ GET /contacts
 
 ```sh
 curl -i http://localhost:8080/contacts \
-  -H 'cache-control: no-cache'
+  -H 'Cache-Control: no-cache'
 
 HTTP/1.1 200 OK
 Content-Type: application/json
