@@ -1,127 +1,202 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/tullo/invoice-mvp/database"
+	"github.com/tullo/invoice-mvp/domain"
 )
 
-// Contact holds first- and lastname of a contact.
-type Contact struct {
-	Firstname string
-	Lastname  string
-}
+var repository = database.NewRepository()
 
-var cm = make(map[int]Contact)
+func init() {
+	rand.Seed(time.Now().UnixNano())
+	// customer
+	cid := repository.AddCustomer("3skills")
+	// project
+	pid := repository.AddProject("Instantfoo.com", cid)
+	// invoice
+	repository.CreateInvoice(domain.Invoice{Month: 6, Year: 2018, CustomerID: cid})
+	// activity
+	aid := repository.AddActivity("Programming")
+	// rate
+	var r domain.Rate
+	r.ProjectID = pid
+	r.ActivityID = aid
+	r.Price = 60.55
+	repository.AddRate(r)
+}
 
 func main() {
 	r := mux.NewRouter()
-	cm[1] = Contact{Firstname: "Andreas", Lastname: "Amstutz"}
+	r.HandleFunc("/customers", customers).Methods("GET")
+	r.HandleFunc("/customers/{customerId:[0-9]+}/projects", projects).Methods("GET")
+	r.HandleFunc("/activities", activities).Methods("GET")
+	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices", createInvoice).Methods("POST")
+	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings", createBooking).Methods("POST")
+	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings/{bookingId:[0-9]+}", deleteBooking).Methods("DELETE")
+	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", updateInvoice).Methods("PUT")
+	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", readInvoiceHandler).Methods("GET")
 
-	r.HandleFunc("/contacts", contacts).Methods("GET")
-	r.HandleFunc("/contacts/{id:[0-9]+}", contact).Methods("GET")
-	r.HandleFunc("/contacts", addContact).Methods("POST")
-	r.HandleFunc("/contacts/{id:[0-9]+}", updateContact).Methods("PUT")
-	r.HandleFunc("/contacts/{id:[0-9]+}", deleteContact).Methods("DELETE")
-	log.Printf("Service listening on http://localhost:8080...")
+	fmt.Println("Restvoice started on http://localhost:8080...")
 	_ = http.ListenAndServe(":8080", r)
 }
 
-func contacts(w http.ResponseWriter, r *http.Request) {
-	var s []Contact
-	for _, c := range cm {
-		s = append(s, c)
-	}
-	b, err := json.Marshal(s)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
+func customers(w http.ResponseWriter, r *http.Request) {
+	cs := repository.Customers()
+	b, _ := json.Marshal(cs)
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(b)
 }
 
-func contact(w http.ResponseWriter, r *http.Request) {
-	v := mux.Vars(r)
-	id, _ := strconv.Atoi(v["id"])
-	if _, ok := cm[id]; !ok {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	b, err := json.Marshal(cm[id])
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
+func projects(w http.ResponseWriter, r *http.Request) {
+	cid, _ := strconv.Atoi(mux.Vars(r)["customerId"])
+	ps := repository.Projects(cid)
+	b, _ := json.Marshal(ps)
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(b)
 }
 
-func addContact(w http.ResponseWriter, r *http.Request) {
-	if b, err := ioutil.ReadAll(r.Body); err == nil {
-		if len(b) == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		id := nextID()
-		var c Contact
-		_ = json.Unmarshal(b, &c)
-		cm[id] = c
-		url := r.URL.String()
-		w.Header().Set("Location", fmt.Sprintf("%s/%d", url, id))
-		w.WriteHeader(http.StatusCreated)
-	} else {
-		w.WriteHeader(http.StatusBadRequest)
-	}
+func activities(w http.ResponseWriter, r *http.Request) {
+	as := repository.Activities()
+	b, _ := json.Marshal(as)
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(b)
 }
 
-func updateContact(w http.ResponseWriter, r *http.Request) {
-	if b, err := ioutil.ReadAll(r.Body); err == nil {
-		if len(b) == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		v := mux.Vars(r)
-		id, _ := strconv.Atoi(v["id"])
-		var c Contact
-		_ = json.Unmarshal(b, &c)
-		cm[id] = c
-		w.WriteHeader(http.StatusNoContent)
-	} else {
-		w.WriteHeader(http.StatusBadRequest)
-	}
-}
-
-func deleteContact(w http.ResponseWriter, r *http.Request) {
-	v := mux.Vars(r)
-	id, err := strconv.Atoi(v["id"])
+func createInvoice(w http.ResponseWriter, r *http.Request) {
+	// Read invoice data from request body
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Print(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Unmarshal json payload
+	var i domain.Invoice
+	_ = json.Unmarshal(body, &i)
+
+	// extract customerId from URI
+	i.CustomerID, _ = strconv.Atoi(mux.Vars(r)["customerId"])
+
+	// Create invoice
+	created, _ := repository.CreateInvoice(i)
+
+	// Marshal invoice to json
+	b, err := json.Marshal(created)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Write response
+	location := fmt.Sprintf("%s/%d", r.URL.String(), created.ID)
+	w.Header().Set("Location", location)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write(b)
+}
+
+func createBooking(w http.ResponseWriter, r *http.Request) {
+	// Read booking data from request body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Create booking booking and marshal it to JSON
+	var b domain.Booking
+	if err := json.Unmarshal(body, &b); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	b.InvoiceID, _ = strconv.Atoi(mux.Vars(r)["invoiceId"])
+	created, _ := repository.CreateBooking(b)
+	bs, err := json.Marshal(created)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if _, ok := cm[id]; !ok {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	delete(cm, id)
+
+	// Write response
+	location := fmt.Sprintf("%s/%d", r.URL.String(), created.ID)
+	w.Header().Set("Location", location)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write(bs)
+}
+
+func deleteBooking(w http.ResponseWriter, r *http.Request) {
+	bid, _ := strconv.Atoi(mux.Vars(r)["bookingId"])
+	repository.DeleteBooking(bid)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func nextID() int {
-	id := 1
-	for k := range cm {
-		if k >= id {
-			id = k + 1
-		}
+func updateInvoice(w http.ResponseWriter, r *http.Request) {
+	// Read invoice data from request body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	return id
+
+	// Unmarshal and update invoice
+	var i domain.Invoice
+	if err := json.Unmarshal(body, &i); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	i.ID, _ = strconv.Atoi(mux.Vars(r)["invoiceId"])
+	i.CustomerID, _ = strconv.Atoi(mux.Vars(r)["customerId"])
+
+	// Aggregate positions
+	if i.Status == "ready for aggregation" {
+		bs := repository.BookingsByInvoiceID(i.ID)
+		for _, b := range bs {
+			a := repository.ActivityByID(b.ActivityID)
+			rate := repository.RateByProjectIDAndActivityID(b.ProjectID, b.ActivityID)
+			i.AddPosition(b.ProjectID, a.Name, b.Hours, rate.Price)
+		}
+		i.Status = "payment expected"
+		i.Updated = time.Now().UTC()
+	}
+
+	repository.Update(i)
+
+	// Write response
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func readInvoiceHandler(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(r)["invoiceId"])
+	i, _ := repository.FindByID(id)
+	accept := r.Header.Get("Accept")
+	switch accept {
+	case "application/pdf":
+		content := bytes.NewReader(i.ToPDF())
+		http.ServeContent(w, r, "invoice.pdf", i.Updated, content)
+		// ServeContent sets the content-type header and makes sure that the
+		// following headers get the correct values as well:
+		// - If-Match
+		// - If-Unmodified-Since
+		// - If-None-Match
+		// - If-Modified-Since
+		// - If-Range
+	case "application/json":
+		bs, _ := json.Marshal(i)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(bs)
+	default:
+		w.WriteHeader(http.StatusNotAcceptable)
+	}
 }
