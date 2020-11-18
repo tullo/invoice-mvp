@@ -27,9 +27,6 @@ func NewRepository() *Repository {
 		rates:      make(map[int]map[int]domain.Rate),
 	}
 
-	// add some sample data
-	_, _ = r.CreateInvoice(domain.Invoice{Month: 6, Year: 2018, CustomerID: 1})
-
 	return &r
 }
 
