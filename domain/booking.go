@@ -4,7 +4,7 @@ import "fmt"
 
 // Booking is a record for work done on excatly one project.
 type Booking struct {
-	ID          int     `json:"-"`
+	ID          int     `json:"id"`
 	Day         int     `json:"day"`
 	Hours       float32 `json:"hours"`
 	Description string  `json:"description"`

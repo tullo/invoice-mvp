@@ -1,202 +1,55 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"math/rand"
-	"net/http"
-	"strconv"
-	"time"
-
-	"github.com/gorilla/mux"
 	"github.com/tullo/invoice-mvp/database"
-	"github.com/tullo/invoice-mvp/domain"
+	"github.com/tullo/invoice-mvp/rest"
+	"github.com/tullo/invoice-mvp/usecase"
 )
 
-var repository = database.NewRepository()
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-	// customer
-	cid := repository.AddCustomer("3skills")
-	// project
-	pid := repository.AddProject("Instantfoo.com", cid)
-	// invoice
-	repository.CreateInvoice(domain.Invoice{Month: 6, Year: 2018, CustomerID: cid})
-	// activity
-	aid := repository.AddActivity("Programming")
-	// rate
-	var r domain.Rate
-	r.ProjectID = pid
-	r.ActivityID = aid
-	r.Price = 60.55
-	repository.AddRate(r)
-}
-
 func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/customers", customers).Methods("GET")
-	r.HandleFunc("/customers/{customerId:[0-9]+}/projects", projects).Methods("GET")
-	r.HandleFunc("/activities", activities).Methods("GET")
-	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices", createInvoice).Methods("POST")
-	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings", createBooking).Methods("POST")
-	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings/{bookingId:[0-9]+}", deleteBooking).Methods("DELETE")
-	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", updateInvoice).Methods("PUT")
-	r.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", readInvoiceHandler).Methods("GET")
+	repository := database.NewFakeRepository()
+	a := rest.NewAdapter()
 
-	fmt.Println("Restvoice started on http://localhost:8080...")
-	_ = http.ListenAndServe(":8080", r)
-}
+	// Activities
+	activities := usecase.NewActivities(repository)
+	a.HandleFunc("/activities", a.ActivitiesHandler(activities)).Methods("GET")
 
-func customers(w http.ResponseWriter, r *http.Request) {
-	cs := repository.Customers()
-	b, _ := json.Marshal(cs)
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-}
+	createActivity := usecase.NewCreateActivity(repository)
+	a.HandleFunc("/activities", a.CreateActivityHandler(createActivity)).Methods("POST")
 
-func projects(w http.ResponseWriter, r *http.Request) {
-	cid, _ := strconv.Atoi(mux.Vars(r)["customerId"])
-	ps := repository.Projects(cid)
-	b, _ := json.Marshal(ps)
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-}
+	// Booking
+	createBooking := usecase.NewCreateBooking(repository)
+	cb := a.CreateBookingHandler(createBooking)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings", cb).Methods("POST")
 
-func activities(w http.ResponseWriter, r *http.Request) {
-	as := repository.Activities()
-	b, _ := json.Marshal(as)
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-}
+	deleteBooking := usecase.NewDeleteBooking(repository)
+	db := a.DeleteBookingHandler(deleteBooking)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings/{bookingId:[0-9]+}", db).Methods("DELETE")
 
-func createInvoice(w http.ResponseWriter, r *http.Request) {
-	// Read invoice data from request body
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	// Customer
+	createCustomer := usecase.NewCreateCustomer(repository)
+	cc := a.CreateCustomerHandler(createCustomer)
+	a.HandleFunc("/customers", cc).Methods("POST")
 
-	// Unmarshal json payload
-	var i domain.Invoice
-	_ = json.Unmarshal(body, &i)
+	// Invoice
+	createInvoice := usecase.NewCreateInvoice(repository)
+	ci := a.CreateInvoiceHandler(createInvoice)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices", ci).Methods("POST")
 
-	// extract customerId from URI
-	i.CustomerID, _ = strconv.Atoi(mux.Vars(r)["customerId"])
+	updateInvoice := usecase.NewUpdateInvoice(repository)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", a.UpdateInvoiceHandler(updateInvoice)).Methods("PUT")
 
-	// Create invoice
-	created, _ := repository.CreateInvoice(i)
+	invoice := usecase.NewGetInvoice(repository)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", a.GetInvoiceHandler(invoice)).Methods("GET")
 
-	// Marshal invoice to json
-	b, err := json.Marshal(created)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	// Projekt
+	createProject := usecase.NewCreateProject(repository)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/projects", a.CreateProjectHandler(createProject)).Methods("POST")
 
-	// Write response
-	location := fmt.Sprintf("%s/%d", r.URL.String(), created.ID)
-	w.Header().Set("Location", location)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write(b)
-}
+	// Stundensatz
+	createRate := usecase.NewCreateRate(repository)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/projects/{projectId:[0-9]+}/rates", a.CreateRateHandler(createRate)).Methods("POST")
 
-func createBooking(w http.ResponseWriter, r *http.Request) {
-	// Read booking data from request body
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	// Create booking booking and marshal it to JSON
-	var b domain.Booking
-	if err := json.Unmarshal(body, &b); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-	}
-
-	b.InvoiceID, _ = strconv.Atoi(mux.Vars(r)["invoiceId"])
-	created, _ := repository.CreateBooking(b)
-	bs, err := json.Marshal(created)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Write response
-	location := fmt.Sprintf("%s/%d", r.URL.String(), created.ID)
-	w.Header().Set("Location", location)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write(bs)
-}
-
-func deleteBooking(w http.ResponseWriter, r *http.Request) {
-	bid, _ := strconv.Atoi(mux.Vars(r)["bookingId"])
-	repository.DeleteBooking(bid)
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func updateInvoice(w http.ResponseWriter, r *http.Request) {
-	// Read invoice data from request body
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	// Unmarshal and update invoice
-	var i domain.Invoice
-	if err := json.Unmarshal(body, &i); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	i.ID, _ = strconv.Atoi(mux.Vars(r)["invoiceId"])
-	i.CustomerID, _ = strconv.Atoi(mux.Vars(r)["customerId"])
-
-	// Aggregate positions
-	if i.Status == "ready for aggregation" {
-		bs := repository.BookingsByInvoiceID(i.ID)
-		for _, b := range bs {
-			a := repository.ActivityByID(b.ActivityID)
-			rate := repository.RateByProjectIDAndActivityID(b.ProjectID, b.ActivityID)
-			i.AddPosition(b.ProjectID, a.Name, b.Hours, rate.Price)
-		}
-		i.Status = "payment expected"
-		i.Updated = time.Now().UTC()
-	}
-
-	repository.Update(i)
-
-	// Write response
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func readInvoiceHandler(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(mux.Vars(r)["invoiceId"])
-	i, _ := repository.FindByID(id)
-	accept := r.Header.Get("Accept")
-	switch accept {
-	case "application/pdf":
-		content := bytes.NewReader(i.ToPDF())
-		http.ServeContent(w, r, "invoice.pdf", i.Updated, content)
-		// ServeContent sets the content-type header and makes sure that the
-		// following headers get the correct values as well:
-		// - If-Match
-		// - If-Unmodified-Since
-		// - If-None-Match
-		// - If-Modified-Since
-		// - If-Range
-	case "application/json":
-		bs, _ := json.Marshal(i)
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(bs)
-	default:
-		w.WriteHeader(http.StatusNotAcceptable)
-	}
+	// Webserver
+	a.ListenAndServe()
 }

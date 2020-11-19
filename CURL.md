@@ -2,24 +2,55 @@
 
 ## Interactions
 
-## GET /customers
+---
 
-> To create an invoice a `customer ID` is requested.
+## POST /activities
+
+Activities:
 
 ```sh
-curl -i http://localhost:8080/customers
+curl -i http://localhost:8080/activities   -H 'Content-Type: application/json'   -d '{
+    "name": "Programming" 
+}'
 
-# response
+# response             
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /activities/1
+```
+
+## GET /activities
+
+```sh
+curl -i http://localhost:8080/activities   -H 'Content-Type: application/json'
+
+# response             
 HTTP/1.1 200 OK
 Content-Type: application/json
-Content-Length: 27
+Content-Length: 47
 
-[{"id":1,"name":"3skills"}]
+[{"id":1,"name":"Programming","userId":"1234"}]
+```
+
+---
+
+## POST /customers
+
+```sh
+curl -i http://localhost:8080/customers   -H 'Content-Type: application/json'   -d '{
+    "name": "3skills" 
+}'
+
+# response
+HTTP/1.1 201 Created
+Location: /customers/1
 ```
 
 ---
 
 ## POST /customers/{customerId}/invoices
+
+Invoices:
 
 > The API currently only knows of the customer with ID 1, that is used in the URI for creating an invoice.
 
@@ -27,61 +58,52 @@ Content-Length: 27
 curl -i http://localhost:8080/customers/1/invoices \
   -H 'Content-Type: application/json' \
   -d '{
-    "month": 6,
-    "year": 2018
+    "month": 9,
+    "year": 2020
 }'
 ```
 
 ```sh
 # response
 HTTP/1.1 201 Created
-Content-Type: application/json
 Location: /customers/1/invoices/1
-Content-Length: 104
-
-{
-  "id": 2,
-  "month": 6,
-  "year": 2018,
-  "status": "open",
-  "customerId": 1
-}
 ```
 
 ---
 
-## Projects & Activities
-
-> The Invoice-Use-Case needs an `invoice ID` and an `activity ID` in order to create bookings.
+## POST /customers/{customerId}/projects
 
 Projects:
 
 ```sh
-curl -s http://localhost:8080/customers/1/projects | jq
+curl -i http://localhost:8080/customers/1/projects \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Instantfoo.com"
+}'
 
 # response
-[
-  {
-    "id": 1,
-    "customerId": 1,
-    "name": "Instantfoo.com"
-  }
-]
+HTTP/1.1 201 Created
+Location: /customers/1/projects/1
 ```
 
-Activities:
+---
+
+## POST /customers/{customerId}/projects/{projectId}/rates
+
+Rates:
 
 ```sh
-curl -s http://localhost:8080/activities | jq
+curl -i http://localhost:8080/customers/1/projects/1/rates \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "activityId": 1,
+    "price": 67.80
+}'
 
 # response
-[
-  {
-    "id": 1,
-    "name": "Programming",
-    "userId": ""
-  }
-]
+HTTP/1.1 201 Created
+Location: /customers/1/projects/1/rates/activity/1
 ```
 
 ---
@@ -92,18 +114,18 @@ curl -s http://localhost:8080/activities | jq
 
 > A new `Booking` references an `Invoice` with `invoiceId` variable in the URL.
 
-The customer only has one project `Instantfoo.com` with ID 1.
+The customer currently only has one project `Instantfoo.com` with ID 1.
 The list of activities contains the activity `Programming` with ID 1.
 
-The activity is now booked on this project:
+The activity is now getting booked on this project:
 
 ```sh
 # customer   : 1 (3skills)
-# invoice    : 2 (2018-06)
+# invoice    : 2 (2020-09)
 # projectId  : 1 (Instantfoo.com)
 # activityId : 1 (Programming)
 
-curl -i http://localhost:8080/customers/1/invoices/2/bookings \
+curl -i http://localhost:8080/customers/1/invoices/1/bookings \
   -H 'Content-Type: application/json' \
   -d '{
     "day": 31,
@@ -114,14 +136,10 @@ curl -i http://localhost:8080/customers/1/invoices/2/bookings \
 
 # response
 HTTP/1.1 201 Created
-Content-Type: application/json
-Location: /customers/1/invoices/2/bookings/1
-Content-Length: 82
-
-{"day":31,"hours":2.5,"description":"","invoiceId":2,"projectId":1,"activityId":1}
+Location: /customers/1/invoices/1/bookings/1
 ```
 
-> The `Booking` of type `Programming` was succesfully created for the `Project` *instantfoo.com* on `Invoice` 2.
+> The `Booking` of type `Programming` was succesfully created for the `Project` *instantfoo.com* on `Invoice` 1.
 
 ---
 
@@ -136,7 +154,7 @@ The simple solution here is to just delete the booking and create a new one.
 The error handling while deleting a non-existing booking will be ignored using a nil-operation, a function that does nothing.
 
 ```sh
-curl -i -X DELETE http://localhost:8080/customers/1/invoices/2/bookings/1
+curl -i -X DELETE http://localhost:8080/customers/1/invoices/1/bookings/1
 
 # response
 HTTP/1.1 204 No Content
@@ -148,14 +166,14 @@ HTTP/1.1 204 No Content
 
 ### Finalize an invoice
 
-The handling of an invoice finalization is implemented using a PUT-Request, as an existing resource is getting updated.
+The handling of invoice finalization is implemented using a PUT-Request as an existing resource is getting updated.
 
 ```sh
-curl -i -X PUT http://localhost:8080/customers/1/invoices/2 \
+curl -i -X PUT http://localhost:8080/customers/1/invoices/1 \
   -H 'Content-Type: application/json' \
   -d '{
-    "month": 6,
-    "year": 2018,
+    "month": 9,
+    "year": 2020,
     "status": "ready for aggregation"
 }'
 
@@ -172,25 +190,65 @@ The `UpdateInvoice` call on the repository implementation saves the now aggregat
 ### Retrieve an Invoice
 
 ```sh
-curl -s http://localhost:8080/customers/1/invoices/2 -H 'Accept: application/json' | jq
+curl -s http://localhost:8080/customers/1/invoices/1 -H 'Accept: application/json' | jq
 
 # response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 164
+
+
 {
-  "id": 2,
-  "month": 6,
-  "year": 2018,
+  "id": 1,
+  "month": 9,
+  "year": 2020,
   "status": "payment expected",
   "customerId": 1,
   "positions": {
     "1": {
       "Programming": {
         "Hours": 2.5,
-        "Price": 151.375
+        "Price": 169.5
       }
     }
   }
 }
 ```
 
----
+### Retrieve an Invoice with booking details
 
+```sh
+curl -s http://localhost:8080/customers/1/invoices/1 -H 'Accept: application/json' | jq
+
+# response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 271
+
+{
+  "id": 1,
+  "month": 9,
+  "year": 2020,
+  "status": "payment expected",
+  "customerId": 1,
+  "positions": {
+    "1": {
+      "Programming": {
+        "Hours": 2.5,
+        "Price": 169.5
+      }
+    }
+  },
+  "bookings": [
+    {
+      "id": 1,
+      "day": 31,
+      "hours": 2.5,
+      "description": "",
+      "invoiceId": 1,
+      "projectId": 1,
+      "activityId": 1
+    }
+  ],
+}
+```

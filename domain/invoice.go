@@ -19,8 +19,9 @@ type Invoice struct {
 	Status     string                      `json:"status"`
 	CustomerID int                         `json:"customerId"`
 	Positions  map[int]map[string]Position `json:"positions,omitempty"`
-	Bookings   []Booking                   `json:"-"`
+	Bookings   []Booking                   `json:"bookings,omitempty"`
 	Updated    time.Time                   `json:"updated,omitempty"`
+	//Bookings   []Booking                 `json:"-"` excluded in json representation
 }
 
 // AddPosition adds an invoice position or updates an existing one.
@@ -43,6 +44,12 @@ func (invoice *Invoice) AddPosition(projectID int, activity string, hours float3
 		position := Position{Hours: hours, Price: hours * rate}
 		invoice.Positions[projectID][activity] = position
 	}
+}
+
+// IsReadyForAggregation indicates whether an invoice is in
+// "ready for aggregation" state.
+func (invoice Invoice) IsReadyForAggregation() bool {
+	return invoice.Status == "ready for aggregation"
 }
 
 // ToPDF produces a pdf representation of the invoice.
