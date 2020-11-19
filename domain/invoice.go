@@ -30,10 +30,12 @@ func (invoice *Invoice) AddPosition(projectID int, activity string, hours float3
 		invoice.Positions = make(map[int]map[string]Position)
 	}
 
+	// Instantiate positions map for a project.
 	if invoice.Positions[projectID] == nil {
 		invoice.Positions[projectID] = make(map[string]Position)
 	}
 
+	// Create or update a position for an activity on a project.
 	if p, ok := invoice.Positions[projectID][activity]; ok {
 		// update position values
 		p.Hours = p.Hours + hours
