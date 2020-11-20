@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-// Position ...
+// Operation defines an operation on the invoice.
+type Operation string
+
+// Position models an invoice position.
 type Position struct {
 	Hours float32
 	Price float32
@@ -58,4 +61,22 @@ func (invoice Invoice) IsReadyForAggregation() bool {
 func (invoice *Invoice) ToPDF() []byte {
 	dat, _ := ioutil.ReadFile("/tmp/invoice.pdf")
 	return dat
+}
+
+// Operations returns allowed operations depending on current invoice state.
+func (invoice Invoice) Operations() []Operation {
+	switch invoice.Status {
+	case "open":
+		return []Operation{"book", "charge", "cancel", "bookings"}
+	case "payment expected":
+		return []Operation{"payment", "bookings"}
+	case "paid":
+		return []Operation{"archive"}
+	case "archived":
+		return []Operation{"revoke"}
+	case "revoked":
+		return []Operation{"archive"}
+	default:
+		return []Operation{}
+	}
 }

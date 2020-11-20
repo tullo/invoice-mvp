@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/tullo/invoice-mvp/domain"
@@ -37,14 +38,24 @@ func (a Adapter) HandleFunc(path string,
 
 // InvoicePresenter returns a presenter matching the 'Accept' request header.
 func (a Adapter) InvoicePresenter(w http.ResponseWriter, r *http.Request) (InvoicePresenter, bool) {
-	switch r.Header.Get("Accept") {
-	case "application/json", "application/hal+json":
-		return NewJSONInvoicePresenter(w), true
-	case "application/pdf":
-		return NewPDFInvoicePresenter(w, r), true
-	default:
-		return NewJSONInvoicePresenter(w), true
+	// e.g. "Accept: application/json;q=0.8, application/hal+json"
+	headers := strings.Split(r.Header.Get("Accept"), ",")
+	var ip InvoicePresenter
+	var ok bool
+	for _, accept := range headers {
+		switch accept {
+		case "application/json", "application/hal+json":
+			ip, ok = NewJSONInvoicePresenter(w), true
+			break
+		case "application/pdf":
+			ip, ok = NewPDFInvoicePresenter(w, r), true
+			break
+		default:
+			ip, ok = NewDefaultPresenter(), false
+			break
+		}
 	}
+	return ip, ok
 }
 
 // Extracts the authorized user's ID from the request (JWT).
@@ -380,7 +391,7 @@ func (a Adapter) GetInvoiceHandler(uc usecase.GetInvoice) http.HandlerFunc {
 			// Runs the usecase to get an invoice that optionaly includes and
 			// lists subresources.
 			i := uc.Run(id, expand)
-			p.Present(i)
+			p.Present(NewHALInvoice(i))
 		} else {
 			w.WriteHeader(http.StatusNotAcceptable)
 		}
