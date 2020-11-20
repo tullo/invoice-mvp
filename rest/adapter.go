@@ -15,7 +15,7 @@ import (
 
 // Adapter converts HTTP request data into domain objects.
 type Adapter struct {
-	r *mux.Router
+	R *mux.Router
 }
 
 // NewAdapter creates an adapter instance.
@@ -26,13 +26,13 @@ func NewAdapter() Adapter {
 // ListenAndServe launches a web server on port 8080.
 func (a Adapter) ListenAndServe() {
 	log.Printf("Listening on http://0.0.0.0%s\n", ":8080")
-	_ = http.ListenAndServe(":8080", a.r)
+	_ = http.ListenAndServe(":8080", a.R)
 }
 
 // HandleFunc creates a route and maps it to a path and handler.
 func (a Adapter) HandleFunc(path string,
 	f func(http.ResponseWriter, *http.Request)) *mux.Route {
-	return a.r.NewRoute().Path(path).HandlerFunc(f)
+	return a.R.NewRoute().Path(path).HandlerFunc(f)
 }
 
 // InvoicePresenter returns a presenter matching the 'Accept' request header.
@@ -396,10 +396,12 @@ func (a Adapter) UpdateInvoiceHandler(updateInvoice usecase.UpdateInvoice) http.
 		}
 		// extract invoiceId from the URI
 		id, err := strconv.Atoi(mux.Vars(r)["invoiceId"])
+		fmt.Println("UpdateInvoiceHandler ===", id, err)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		i, err := a.readInvoice(r)
+		fmt.Println("UpdateInvoiceHandler ===", i, err)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

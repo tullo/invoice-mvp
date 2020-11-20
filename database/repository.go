@@ -81,8 +81,9 @@ func (r *FakeRepository) BookingsByInvoiceID(invoiceID int) []domain.Booking {
 // CreateBooking creates a booking.
 func (r *FakeRepository) CreateBooking(b domain.Booking) (domain.Booking, error) {
 	b.ID = r.nextBookingID(b.InvoiceID)
-	if bs, ok := r.bookings[b.InvoiceID]; ok {
-		bs[b.ID] = b
+	if bm, ok := r.bookings[b.InvoiceID]; ok {
+		bm[b.ID] = b
+		r.bookings[b.InvoiceID] = bm
 	} else {
 		bm := make(map[int]domain.Booking)
 		bm[b.ID] = b
