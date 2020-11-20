@@ -20,6 +20,7 @@ const (
 	customer = 1
 	pro1     = 1
 	pro2     = 2
+	inv1     = 1
 )
 const (
 	act1 = iota + 1
@@ -43,13 +44,23 @@ func setupBaseData(r *database.FakeRepository) {
 	r.CreateRate(domain.Rate{ProjectID: pro2, ActivityID: act3, Price: 50}) // Project management
 }
 
+func booking(id, pid, aid int, h float32, d string) domain.Booking {
+	return domain.Booking{
+		InvoiceID:   id,
+		ProjectID:   pid,
+		ActivityID:  aid,
+		Hours:       h,
+		Description: d,
+	}
+}
+
 func TestShouldUpdateState(t *testing.T) {
 	// Setup
 	r := database.NewFakeRepository()
 	uc := usecase.NewUpdateInvoice(r)
 
 	// Create invoice in "open" state
-	i, err := r.CreateInvoice(domain.Invoice{ID: 1, CustomerID: customer})
+	i, err := r.CreateInvoice(domain.Invoice{ID: inv1, CustomerID: customer})
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,50 +75,46 @@ func TestShouldUpdateState(t *testing.T) {
 	}
 
 	// Assert
-	actual := r.GetInvoice(1)
+	actual := r.GetInvoice(inv1)
 	assert.Equal(t, "payment expected", actual.Status)
 }
 
 func TestAggregateBookings(t *testing.T) {
+	//=========================================================================
 	// Setup
 	r := database.NewFakeRepository()
 	setupBaseData(r)
 	uc := usecase.NewUpdateInvoice(r)
 
 	// Create bookings for project 1
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro1,
-		ActivityID: act1, Hours: 20, Description: "Feature 4321 development"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro1,
-		ActivityID: act1, Hours: 12, Description: "Rating impl"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro1,
-		ActivityID: act2, Hours: 3, Description: "Rating test"})
+	r.CreateBooking(booking(inv1, pro1, act1, 20, "Feature 4321 development"))
+	r.CreateBooking(booking(inv1, pro1, act1, 12, "Rating impl"))
+	r.CreateBooking(booking(inv1, pro1, act2, 3, "Rating test"))
 
 	// Create bookings for project 2
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro2,
-		ActivityID: act3, Hours: 4, Description: "Retrospective planing"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro2,
-		ActivityID: act3, Hours: 3, Description: "Management offsite"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro2,
-		ActivityID: act2, Hours: 8, Description: "Search testing"})
+	r.CreateBooking(booking(inv1, pro2, act3, 4, "Retrospective planing"))
+	r.CreateBooking(booking(inv1, pro2, act3, 3, "Management offsite"))
+	r.CreateBooking(booking(inv1, pro2, act2, 8, "Search testing"))
 
 	// Create invoice in "open" state
-	i, err := r.CreateInvoice(domain.Invoice{ID: 1, CustomerID: customer})
+	i, err := r.CreateInvoice(domain.Invoice{ID: inv1, CustomerID: customer})
 	if err != nil {
 		t.Error(err)
 	}
-	// Update invoice state
-	mod, _ := time.Parse(time.RFC3339, "2020-11-20T12:00:00")
+	// advance invoice state
 	i.Status = "ready for aggregation"
-	i.Updated = mod
 	r.UpdateInvoice(i)
 
+	//=========================================================================
 	// Run UpdateInvoice use case
 	err = uc.Run(user, i)
 	if err != nil {
 		t.Error(err)
 	}
 
+	//=========================================================================
 	// Assert
+	mod, _ := time.Parse(time.RFC3339, "2020-11-20T12:00:00")
 	status := "payment expected"
 	expected := domain.Invoice{ID: 1, Status: status, CustomerID: customer}
 	expected.AddPosition(pro1, "Programming", 32, 60)
@@ -116,50 +123,50 @@ func TestAggregateBookings(t *testing.T) {
 	expected.AddPosition(pro2, "Quality control", 8, 55)
 	expected.Updated = mod
 
-	actual := r.GetInvoice(1)
+	actual := r.GetInvoice(inv1)
+	actual.Updated = mod
 	assert.Equal(t, expected, actual)
 }
 
 func TestHttpInvoiceAggregation(t *testing.T) {
+	//=========================================================================
 	// Setup
 	r := database.NewFakeRepository()
 	setupBaseData(r)
 	uc := usecase.NewUpdateInvoice(r)
 
 	// Create bookings for project 1
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro1,
-		ActivityID: act1, Hours: 20, Description: "Feature 4321 development"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro1,
-		ActivityID: act1, Hours: 12, Description: "Rating impl"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro1,
-		ActivityID: act2, Hours: 3, Description: "Rating test"})
+	r.CreateBooking(booking(inv1, pro1, act1, 20, "Feature 4321 development"))
+	r.CreateBooking(booking(inv1, pro1, act1, 12, "Rating impl"))
+	r.CreateBooking(booking(inv1, pro1, act2, 3, "Rating test"))
 
 	// Create bookings for project 2
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro2,
-		ActivityID: act3, Hours: 4, Description: "Retrospective planing"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro2,
-		ActivityID: act3, Hours: 3, Description: "Management offsite"})
-	r.CreateBooking(domain.Booking{InvoiceID: 1, ProjectID: pro2,
-		ActivityID: act2, Hours: 8, Description: "Search testing"})
+	r.CreateBooking(booking(inv1, pro2, act3, 4, "Retrospective planing"))
+	r.CreateBooking(booking(inv1, pro2, act3, 3, "Management offsite"))
+	r.CreateBooking(booking(inv1, pro2, act2, 8, "Search testing"))
 
-	i, err := r.CreateInvoice(domain.Invoice{ID: 1, CustomerID: customer})
+	// Create invoice in "open" state
+	i, err := r.CreateInvoice(domain.Invoice{ID: inv1, CustomerID: customer})
 	if err != nil {
 		t.Error(err)
 	}
-	// Update invoice state
+	// advance invoice state
 	i.Status = "ready for aggregation"
 
 	// Prepare HTTP-Request
 	bs, _ := json.Marshal(&i)
 	req, _ := http.NewRequest("PUT", "/customers/1/invoices/1", bytes.NewReader(bs))
 
-	// Run
+	//=========================================================================
+	// Update invoice using PUT request
 	res := httptest.NewRecorder()
 	a := rest.NewAdapter()
 	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", a.UpdateInvoiceHandler(uc)).Methods("PUT")
 	a.R.ServeHTTP(res, req)
 
+	//=========================================================================
 	// Assert
+	mod, _ := time.Parse(time.RFC3339, "2020-11-20T12:00:00")
 	status := "payment expected"
 	expected := domain.Invoice{ID: 1, Status: status, CustomerID: customer}
 	expected.AddPosition(pro1, "Programming", 32, 60)
@@ -167,10 +174,7 @@ func TestHttpInvoiceAggregation(t *testing.T) {
 	expected.AddPosition(pro2, "Project management", 7, 50)
 	expected.AddPosition(pro2, "Quality control", 8, 55)
 
-	actual := r.GetInvoice(1)
-	assert.Equal(t, expected.ID, actual.ID)
-	assert.Equal(t, expected.CustomerID, actual.CustomerID)
-	assert.Equal(t, expected.Status, actual.Status)
-	assert.Equal(t, expected.Bookings, actual.Bookings)
-	assert.Equal(t, expected.Positions, actual.Positions)
+	actual := r.GetInvoice(inv1)
+	actual.Updated = mod
+	assert.Equal(t, expected, actual)
 }
