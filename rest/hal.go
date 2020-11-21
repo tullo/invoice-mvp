@@ -44,6 +44,8 @@ func translate(o domain.Operation, i domain.Invoice) (Link, error) {
 	switch o {
 	case "book":
 		return Link{fmt.Sprintf("/book/%d", i.ID)}, nil
+	case "bookings":
+		return Link{fmt.Sprintf("/invoice/%d/bookings", i.ID)}, nil
 	case "charge":
 		return Link{fmt.Sprintf("/charge/%d", i.ID)}, nil
 	case "cancel":
