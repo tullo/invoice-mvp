@@ -12,10 +12,12 @@ func main() {
 
 	// Activities
 	activities := usecase.NewActivities(repository)
-	a.HandleFunc("/activities", a.ActivitiesHandler(activities)).Methods("GET")
+	ga := a.ActivitiesHandler(activities)
+	a.HandleFunc("/activities", ga).Methods("GET")
 
 	createActivity := usecase.NewCreateActivity(repository)
-	a.HandleFunc("/activities", a.CreateActivityHandler(createActivity)).Methods("POST")
+	ca := a.CreateActivityHandler(createActivity)
+	a.HandleFunc("/activities", ca).Methods("POST")
 
 	// Booking
 	createBooking := usecase.NewCreateBooking(repository)
@@ -37,18 +39,22 @@ func main() {
 	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices", ci).Methods("POST")
 
 	updateInvoice := usecase.NewUpdateInvoice(repository)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", a.UpdateInvoiceHandler(updateInvoice)).Methods("PUT")
+	ui := a.UpdateInvoiceHandler(updateInvoice)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", ui).Methods("PUT")
 
 	invoice := usecase.NewGetInvoice(repository)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", a.GetInvoiceHandler(invoice)).Methods("GET")
+	gi := a.GetInvoiceHandler(invoice)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", gi).Methods("GET")
 
-	// Projekt
+	// Project
 	createProject := usecase.NewCreateProject(repository)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/projects", a.CreateProjectHandler(createProject)).Methods("POST")
+	cp := a.CreateProjectHandler(createProject)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/projects", cp).Methods("POST")
 
-	// Stundensatz
+	// Hourly rate
 	createRate := usecase.NewCreateRate(repository)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/projects/{projectId:[0-9]+}/rates", a.CreateRateHandler(createRate)).Methods("POST")
+	cr := a.CreateRateHandler(createRate)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/projects/{projectId:[0-9]+}/rates", cr).Methods("POST")
 
 	// Webserver
 	a.ListenAndServe()
