@@ -264,9 +264,40 @@ HTTP/1.1 401 Unauthorized
 Www-Authenticate: Basic realm="invoice.mvp"
 ```
 
-Follow up request using basic auth credentials:
+Follow up request using Basic Auth credentials:
 
 ```sh
 curl -i --user go:time http://localhost:8080/activities
 HTTP/1.1 200 OK
+```
+
+## Digest Auth
+
+Initial request:
+
+```sh
+curl -i http://localhost:8080/customers \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "3skills" 
+}'
+
+HTTP/1.1 401 Unauthorized
+Www-Authenticate: Digest realm="invoice.mvp", nonce="UAZs1dp3wX5BtXEpoCXKO2lHhap564rX", opaque="XF3tAJ3483jUUAUJJQJJAHDQP01MJHD", qop="auth", algorithm="SHA-256"
+```
+
+- `qop` (Quality of Protection)
+- `nonce` : random server generated sequence of chars (used by client to calculate the response hash)
+- `opaque` : random server generated sequence of chars (sent back unchanged in header)
+
+Follow up request using Digest Auth credentials:
+
+```sh
+curl -i --digest --user go:time http://localhost:8080/customers \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "3skills" 
+}'
+
+HTTP/1.1 201 Created
 ```
