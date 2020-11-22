@@ -1,22 +1,34 @@
 package main
 
 import (
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
 	"github.com/tullo/invoice-mvp/database"
 	"github.com/tullo/invoice-mvp/rest"
 	"github.com/tullo/invoice-mvp/usecase"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+		os.Exit(1)
+	}
+
 	repository := database.NewFakeRepository()
 	a := rest.NewAdapter()
 
 	// Activities
 	activities := usecase.NewActivities(repository)
 	ga := a.ActivitiesHandler(activities)
+	ga = rest.BasicAuth(ga)
 	a.HandleFunc("/activities", ga).Methods("GET")
 
 	createActivity := usecase.NewCreateActivity(repository)
 	ca := a.CreateActivityHandler(createActivity)
+	ca = rest.BasicAuth(ca)
 	a.HandleFunc("/activities", ca).Methods("POST")
 
 	// Booking

@@ -9,7 +9,7 @@
 Activities:
 
 ```sh
-curl -i http://localhost:8080/activities   -H 'Content-Type: application/json'   -d '{
+curl -i --user go:time http://localhost:8080/activities   -H 'Content-Type: application/json'   -d '{
     "name": "Programming" 
 }'
 
@@ -22,7 +22,7 @@ Location: /activities/1
 ## GET /activities
 
 ```sh
-curl -i http://localhost:8080/activities   -H 'Content-Type: application/json'
+curl -i --user go:time http://localhost:8080/activities   -H 'Content-Type: application/json'
 
 # response             
 HTTP/1.1 200 OK
@@ -251,4 +251,22 @@ Content-Length: 271
     }
   ],
 }
+```
+
+## Basic Auth
+
+Initial request:
+
+```sh
+curl -i http://localhost:8080/activities
+
+HTTP/1.1 401 Unauthorized
+Www-Authenticate: Basic realm="invoice.mvp"
+```
+
+Follow up request using basic auth credentials:
+
+```sh
+curl -i --user go:time http://localhost:8080/activities
+HTTP/1.1 200 OK
 ```
