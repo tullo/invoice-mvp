@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/tullo/invoice-mvp/database"
 	"github.com/tullo/invoice-mvp/rest"
+	"github.com/tullo/invoice-mvp/roles"
 	"github.com/tullo/invoice-mvp/usecase"
 )
 
@@ -34,8 +35,8 @@ func main() {
 	// Booking
 	createBooking := usecase.NewCreateBooking(repository)
 	cb := a.CreateBookingHandler(createBooking)
-	cb = rest.JWTAuth(cb)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings", cb).Methods("POST")
+	cb = rest.JWTAuth(roles.AssertOwnsInvoice(cb, repository))
+	a.HandleFunc("/book/{invoiceId:[0-9]+}", cb).Methods("POST")
 
 	deleteBooking := usecase.NewDeleteBooking(repository)
 	db := a.DeleteBookingHandler(deleteBooking)
@@ -67,7 +68,7 @@ func main() {
 	// Project
 	createProject := usecase.NewCreateProject(repository)
 	cp := a.CreateProjectHandler(createProject)
-	cp = rest.JWTAuth(cp)
+	cp = rest.JWTAuth(roles.AssertAdmin(cp))
 	a.HandleFunc("/customers/{customerId:[0-9]+}/projects", cp).Methods("POST")
 
 	// Hourly rate

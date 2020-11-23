@@ -66,8 +66,9 @@ func (a Adapter) InvoicePresenter(w http.ResponseWriter, r *http.Request) (Invoi
 
 // Extracts the authorized user's ID from the request (JWT).
 func (a Adapter) currentUser(r *http.Request) (string, error) {
-	userID := "1234"
-	return userID, nil
+	token := ExtractJwt(r.Header)
+	uid := Claim(token, "sub")
+	return uid, nil
 }
 
 //=============================================================================

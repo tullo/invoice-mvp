@@ -31,7 +31,7 @@ func main() {
 	// in possession of the private key used to sign the certificate.
 	req, _ := http.NewRequest("GET", "https://127.0.0.1:8443/activities", nil)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0")
+	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8")
 	res, err := client.Do(req)
 	res.Body.Close()
 	if err != nil {

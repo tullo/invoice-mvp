@@ -10,7 +10,7 @@ Activities:
 
 ```sh
 curl -i https://127.0.0.1:8443/activities \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "Programming" 
@@ -26,7 +26,7 @@ Location: /activities/1
 
 ```sh
 curl -i https://127.0.0.1:8443/activities \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json'
 
 # response             
@@ -34,7 +34,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 Content-Length: 47
 
-[{"id":1,"name":"Programming","userId":"1234"}]
+[{"id":1,"name":"Programming","userId":"f8c39a31-9ced-4761-8a33-b9c628a67510"}]
 ```
 
 ---
@@ -43,7 +43,7 @@ Content-Length: 47
 
 ```sh
 curl -i https://127.0.0.1:8443/customers \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "3skills" 
@@ -64,7 +64,7 @@ Invoices:
 
 ```sh
 curl -i https://127.0.0.1:8443/customers/1/invoices \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "month": 9,
@@ -86,7 +86,7 @@ Projects:
 
 ```sh
 curl -i https://127.0.0.1:8443/customers/1/projects \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "Instantfoo.com"
@@ -105,7 +105,7 @@ Rates:
 
 ```sh
 curl -i https://127.0.0.1:8443/customers/1/projects/1/rates \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "activityId": 1,
@@ -136,8 +136,8 @@ The activity is now getting booked on this project:
 # projectId  : 1 (Instantfoo.com)
 # activityId : 1 (Programming)
 
-curl -i https://127.0.0.1:8443/customers/1/invoices/1/bookings \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+curl -i https://127.0.0.1:8443/book/1 \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "day": 31,
@@ -168,7 +168,7 @@ The error handling while deleting a non-existing booking will be ignored using a
 
 ```sh
 curl -i -X DELETE \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
 https://127.0.0.1:8443/customers/1/invoices/1/bookings/1
 
 # response
@@ -185,7 +185,7 @@ The handling of invoice finalization is implemented using a PUT-Request as an ex
 
 ```sh
 curl -i -X PUT https://127.0.0.1:8443/customers/1/invoices/1 \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
     "month": 9,
@@ -207,7 +207,7 @@ The `UpdateInvoice` call on the repository implementation saves the now aggregat
 
 ```sh
 curl -s https://127.0.0.1:8443/customers/1/invoices/1 \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Accept: application/json' | jq
 
 # response
@@ -248,7 +248,7 @@ Content-Length: 164
 
 ```sh
 curl -s https://127.0.0.1:8443/customers/1/invoices/1?expand=bookings \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Accept: application/json' | jq
 
 # response
@@ -360,7 +360,7 @@ Follow up request using Digest Auth credentials:
 ```sh
 curl -i https://127.0.0.1:8443/customers/1/invoices \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -d '{
     "month": 9,
     "year": 2020

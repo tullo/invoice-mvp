@@ -108,7 +108,7 @@ func digestParts(s string) map[string]string {
 // JWTAuth decorator
 func JWTAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := extractJwt(r.Header)
+		token := ExtractJwt(r.Header)
 		if verifyJWT(token) {
 			next.ServeHTTP(w, r)
 			return
@@ -118,7 +118,8 @@ func JWTAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func extractJwt(h http.Header) string {
+// ExtractJwt extracts the jwt token from the header line.
+func ExtractJwt(h http.Header) string {
 	var jwtRegex = regexp.MustCompile(`^Bearer (\S+)$`)
 
 	if hs, ok := h["Authorization"]; ok {
@@ -132,16 +133,37 @@ func extractJwt(h http.Header) string {
 	return ""
 }
 
+// HMACKeyFunc verifies the token signing method and returns the shared HMAC
+// secret as key used for signature validation.
+func HMACKeyFunc(t *jwt.Token) (interface{}, error) {
+	// signing method from token header must match expected method.
+	if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+	}
+	// Public IDP Key = shared HMAC secret
+	return []byte(secret.Shared), nil
+}
+
 func verifyJWT(s string) bool {
-	// Parse and validate token using a keyfunc.
-	t, err := jwt.Parse(s, func(t *jwt.Token) (interface{}, error) {
-		// signing method from token header must match expected method.
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
-		// Public IDP Key = shared HMAC secret
-		return []byte(secret.Shared), nil
-	})
+	// Parse and validate token using keyfunc.
+	t, err := jwt.Parse(s, HMACKeyFunc)
 
 	return err == nil && t.Valid
+}
+
+// Claim returns JWT claim matching the key parameter.
+func Claim(s string, key string) string {
+	// Parse and validate token using keyfunc.
+	t, err := jwt.Parse(s, HMACKeyFunc)
+	if err != nil {
+		return ""
+	}
+
+	if claims, ok := t.Claims.(jwt.MapClaims); ok {
+		if claims[key] != nil {
+			return claims[key].(string) // map[string]interface{}
+		}
+	}
+
+	return ""
 }

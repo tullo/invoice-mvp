@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	user     = "1234"
+	user     = "f8c39a31-9ced-4761-8a33-b9c628a67510"
 	customer = 1
 	pro1     = 1
 	pro2     = 2
@@ -29,6 +29,8 @@ const (
 )
 
 func setupBaseData(r *database.FakeRepository) {
+	// Customers
+	r.CreateCustomer(domain.Customer{ID: customer, Name: "3skills", UserID: user})
 	// Projects
 	r.CreateProject(domain.Project{ID: pro1, Name: "Instanfoo.com", CustomerID: customer})
 	r.CreateProject(domain.Project{ID: pro2, Name: "Covid19tracker.biz", CustomerID: customer})
@@ -156,6 +158,8 @@ func TestHttpInvoiceAggregation(t *testing.T) {
 	// Prepare HTTP-Request
 	bs, _ := json.Marshal(&i)
 	req, _ := http.NewRequest("PUT", "/customers/1/invoices/1", bytes.NewReader(bs))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8")
 
 	//=========================================================================
 	// Update invoice using PUT request
