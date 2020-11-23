@@ -17,7 +17,7 @@ import (
 
 func main() {
 	body := `{"name": "3skills"}`
-	digestPost("http://localhost:8080", "/customers", []byte(body))
+	digestPost("https://127.0.0.1:8443", "/customers", []byte(body))
 }
 
 func digestParts(resp *http.Response) map[string]string {

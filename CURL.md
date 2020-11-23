@@ -9,7 +9,10 @@
 Activities:
 
 ```sh
-curl -i --user go:time http://localhost:8080/activities   -H 'Content-Type: application/json'   -d '{
+curl -i https://127.0.0.1:8443/activities \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Content-Type: application/json' \
+  -d '{
     "name": "Programming" 
 }'
 
@@ -22,7 +25,9 @@ Location: /activities/1
 ## GET /activities
 
 ```sh
-curl -i --user go:time http://localhost:8080/activities   -H 'Content-Type: application/json'
+curl -i https://127.0.0.1:8443/activities \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Content-Type: application/json'
 
 # response             
 HTTP/1.1 200 OK
@@ -37,7 +42,7 @@ Content-Length: 47
 ## POST /customers
 
 ```sh
-curl -i http://localhost:8080/customers \
+curl -i https://127.0.0.1:8443/customers \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -58,7 +63,7 @@ Invoices:
 > The API currently only knows of the customer with ID 1, that is used in the URI for creating an invoice.
 
 ```sh
-curl -i http://localhost:8080/customers/1/invoices \
+curl -i https://127.0.0.1:8443/customers/1/invoices \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -80,7 +85,7 @@ Location: /customers/1/invoices/1
 Projects:
 
 ```sh
-curl -i http://localhost:8080/customers/1/projects \
+curl -i https://127.0.0.1:8443/customers/1/projects \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -99,7 +104,7 @@ Location: /customers/1/projects/1
 Rates:
 
 ```sh
-curl -i http://localhost:8080/customers/1/projects/1/rates \
+curl -i https://127.0.0.1:8443/customers/1/projects/1/rates \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -131,7 +136,7 @@ The activity is now getting booked on this project:
 # projectId  : 1 (Instantfoo.com)
 # activityId : 1 (Programming)
 
-curl -i http://localhost:8080/customers/1/invoices/1/bookings \
+curl -i https://127.0.0.1:8443/customers/1/invoices/1/bookings \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -164,7 +169,7 @@ The error handling while deleting a non-existing booking will be ignored using a
 ```sh
 curl -i -X DELETE \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
-http://localhost:8080/customers/1/invoices/1/bookings/1
+https://127.0.0.1:8443/customers/1/invoices/1/bookings/1
 
 # response
 HTTP/1.1 204 No Content
@@ -179,7 +184,7 @@ HTTP/1.1 204 No Content
 The handling of invoice finalization is implemented using a PUT-Request as an existing resource is getting updated.
 
 ```sh
-curl -i -X PUT http://localhost:8080/customers/1/invoices/1 \
+curl -i -X PUT https://127.0.0.1:8443/customers/1/invoices/1 \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -201,7 +206,7 @@ The `UpdateInvoice` call on the repository implementation saves the now aggregat
 ### Retrieve an Invoice
 
 ```sh
-curl -s http://localhost:8080/customers/1/invoices/1 \
+curl -s https://127.0.0.1:8443/customers/1/invoices/1 \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Accept: application/json' | jq
 
@@ -242,7 +247,7 @@ Content-Length: 164
 ### Retrieve an Invoice with booking details
 
 ```sh
-curl -s http://localhost:8080/customers/1/invoices/1?expand=bookings \
+curl -s https://127.0.0.1:8443/customers/1/invoices/1?expand=bookings \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Accept: application/json' | jq
 
@@ -279,12 +284,14 @@ Content-Length: 271
 }
 ```
 
+----
+
 ## Basic Auth
 
 Initial request:
 
 ```sh
-curl -i http://localhost:8080/activities
+curl -i https://127.0.0.1:8443/activities
 
 HTTP/1.1 401 Unauthorized
 Www-Authenticate: Basic realm="invoice.mvp"
@@ -293,7 +300,7 @@ Www-Authenticate: Basic realm="invoice.mvp"
 Follow up request using Basic Auth credentials:
 
 ```sh
-curl -i --user go:time http://localhost:8080/activities
+curl -i --user go:time https://127.0.0.1:8443/activities
 HTTP/1.1 200 OK
 ```
 
@@ -302,7 +309,7 @@ HTTP/1.1 200 OK
 Initial request:
 
 ```sh
-curl -i http://localhost:8080/customers \
+curl -i https://127.0.0.1:8443/customers \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "3skills" 
@@ -319,7 +326,7 @@ Www-Authenticate: Digest realm="invoice.mvp", nonce="UAZs1dp3wX5BtXEpoCXKO2lHhap
 Follow up request using Digest Auth credentials:
 
 ```sh
-curl -i --digest --user go:time http://localhost:8080/customers \
+curl -i --digest --user go:time https://127.0.0.1:8443/customers \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "3skills" 
@@ -333,7 +340,7 @@ HTTP/1.1 201 Created
 Initial request:
 
 ```sh
-curl -i http://localhost:8080/customers/1/invoices \
+curl -i https://127.0.0.1:8443/customers/1/invoices \
   -H 'Content-Type: application/json' \
   -d '{
     "month": 9,
@@ -351,7 +358,7 @@ Www-Authenticate: Bearer realm="invoice.mvp"
 Follow up request using Digest Auth credentials:
 
 ```sh
-curl -i http://localhost:8080/customers/1/invoices \
+curl -i https://127.0.0.1:8443/customers/1/invoices \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -d '{

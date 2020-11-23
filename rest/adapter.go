@@ -30,6 +30,12 @@ func (a Adapter) ListenAndServe() {
 	_ = http.ListenAndServe(":8080", a.R)
 }
 
+// ListenAndServeTLS launches a web server on port 8080.
+func (a Adapter) ListenAndServeTLS() {
+	log.Printf("Listening on https://0.0.0.0%s\n", ":8443")
+	_ = http.ListenAndServeTLS(":8443", "localhost+2.pem", "localhost+2-key.pem", a.R)
+}
+
 // HandleFunc creates a route and maps it to a path and handler.
 func (a Adapter) HandleFunc(path string,
 	f func(http.ResponseWriter, *http.Request)) *mux.Route {

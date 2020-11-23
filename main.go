@@ -23,12 +23,12 @@ func main() {
 	// Activities
 	activities := usecase.NewActivities(repository)
 	ga := a.ActivitiesHandler(activities)
-	ga = rest.BasicAuth(ga)
+	ga = rest.JWTAuth(ga)
 	a.HandleFunc("/activities", ga).Methods("GET")
 
 	createActivity := usecase.NewCreateActivity(repository)
 	ca := a.CreateActivityHandler(createActivity)
-	ca = rest.BasicAuth(ca)
+	ca = rest.JWTAuth(ca)
 	a.HandleFunc("/activities", ca).Methods("POST")
 
 	// Booking
@@ -77,5 +77,5 @@ func main() {
 	a.HandleFunc("/customers/{customerId:[0-9]+}/projects/{projectId:[0-9]+}/rates", cr).Methods("POST")
 
 	// Webserver
-	a.ListenAndServe()
+	a.ListenAndServeTLS()
 }
