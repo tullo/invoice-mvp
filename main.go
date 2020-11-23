@@ -45,7 +45,7 @@ func main() {
 	// Customer
 	createCustomer := usecase.NewCreateCustomer(repository)
 	cc := a.CreateCustomerHandler(createCustomer)
-	cc = rest.DigestAuth(cc)
+	cc = rest.JWTAuth(cc)
 	a.HandleFunc("/customers", cc).Methods("POST")
 
 	// Invoice

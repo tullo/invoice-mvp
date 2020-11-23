@@ -407,12 +407,10 @@ func (a Adapter) UpdateInvoiceHandler(updateInvoice usecase.UpdateInvoice) http.
 		}
 		// extract invoiceId from the URI
 		id, err := strconv.Atoi(mux.Vars(r)["invoiceId"])
-		fmt.Println("UpdateInvoiceHandler ===", id, err)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		i, err := a.readInvoice(r)
-		fmt.Println("UpdateInvoiceHandler ===", i, err)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

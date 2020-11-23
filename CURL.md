@@ -37,7 +37,10 @@ Content-Length: 47
 ## POST /customers
 
 ```sh
-curl -i http://localhost:8080/customers   -H 'Content-Type: application/json'   -d '{
+curl -i http://localhost:8080/customers \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Content-Type: application/json' \
+  -d '{
     "name": "3skills" 
 }'
 
@@ -56,6 +59,7 @@ Invoices:
 
 ```sh
 curl -i http://localhost:8080/customers/1/invoices \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
     "month": 9,
@@ -77,6 +81,7 @@ Projects:
 
 ```sh
 curl -i http://localhost:8080/customers/1/projects \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "Instantfoo.com"
@@ -95,6 +100,7 @@ Rates:
 
 ```sh
 curl -i http://localhost:8080/customers/1/projects/1/rates \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
     "activityId": 1,
@@ -126,10 +132,12 @@ The activity is now getting booked on this project:
 # activityId : 1 (Programming)
 
 curl -i http://localhost:8080/customers/1/invoices/1/bookings \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
     "day": 31,
     "hours": 2.5,
+    "description": "Front: bugfix #6789",
     "projectId": 1,
     "activityId": 1
 }'
@@ -154,7 +162,9 @@ The simple solution here is to just delete the booking and create a new one.
 The error handling while deleting a non-existing booking will be ignored using a nil-operation, a function that does nothing.
 
 ```sh
-curl -i -X DELETE http://localhost:8080/customers/1/invoices/1/bookings/1
+curl -i -X DELETE \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+http://localhost:8080/customers/1/invoices/1/bookings/1
 
 # response
 HTTP/1.1 204 No Content
@@ -170,6 +180,7 @@ The handling of invoice finalization is implemented using a PUT-Request as an ex
 
 ```sh
 curl -i -X PUT http://localhost:8080/customers/1/invoices/1 \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
   -H 'Content-Type: application/json' \
   -d '{
     "month": 9,
@@ -190,7 +201,9 @@ The `UpdateInvoice` call on the repository implementation saves the now aggregat
 ### Retrieve an Invoice
 
 ```sh
-curl -s http://localhost:8080/customers/1/invoices/1 -H 'Accept: application/json' | jq
+curl -s http://localhost:8080/customers/1/invoices/1 \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Accept: application/json' | jq
 
 # response
 HTTP/1.1 200 OK
@@ -212,13 +225,26 @@ Content-Length: 164
       }
     }
   }
+  "_links": {
+    "bookings": {
+      "href": "/invoice/1/bookings"
+    },
+    "payment": {
+      "href": "/payment/1"
+    },
+    "self": {
+      "href": "/invoice/1"
+    }
+  }
 }
 ```
 
 ### Retrieve an Invoice with booking details
 
 ```sh
-curl -s http://localhost:8080/customers/1/invoices/1 -H 'Accept: application/json' | jq
+curl -s http://localhost:8080/customers/1/invoices/1?expand=bookings \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -H 'Accept: application/json' | jq
 
 # response
 HTTP/1.1 200 OK
@@ -244,7 +270,7 @@ Content-Length: 271
       "id": 1,
       "day": 31,
       "hours": 2.5,
-      "description": "",
+      "description": "Front: bugfix #6789",
       "invoiceId": 1,
       "projectId": 1,
       "activityId": 1
@@ -297,6 +323,40 @@ curl -i --digest --user go:time http://localhost:8080/customers \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "3skills" 
+}'
+
+HTTP/1.1 201 Created
+```
+
+## JWT Auth
+
+Initial request:
+
+```sh
+curl -i http://localhost:8080/customers/1/invoices \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "month": 9,
+    "year": 2020
+}'
+
+HTTP/1.1 401 Unauthorized
+Www-Authenticate: Bearer realm="invoice.mvp"
+```
+
+- `qop` (Quality of Protection)
+- `nonce` : random server generated sequence of chars (used by client to calculate the response hash)
+- `opaque` : random server generated sequence of chars (sent back unchanged in header)
+
+Follow up request using Digest Auth credentials:
+
+```sh
+curl -i http://localhost:8080/customers/1/invoices \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiaW52b2ljZS5tdnAifQ.j_NUeC0VmuxvrV-B1cVevUJPuBoxzXx2qbdg38otdh0' \
+  -d '{
+    "month": 9,
+    "year": 2020
 }'
 
 HTTP/1.1 201 Created
