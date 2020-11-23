@@ -4,7 +4,8 @@ A minimum viable product for invoicing.
 
 ## Level-2-Services
 
-- 6th iteration [Authentication: Basic, Digest, JWT](https://github.com/tullo/invoice-mvp/tree/db1c1f28fb9b5270cf6bb6ee6dc4c12f17a93303) (the current mvp implementation)
+- 7th iteration [Transport Layer Encryption and Server Authn](https://github.com/tullo/invoice-mvp/tree/0a5848995a5056fc2c62b1fba3572c4b8629faab) (the current mvp implementation)
+- 6th iteration [Authentication: Basic, Digest, JWT](https://github.com/tullo/invoice-mvp/tree/db1c1f28fb9b5270cf6bb6ee6dc4c12f17a93303)
 - 5th iteration [HAL invoice representation](https://github.com/tullo/invoice-mvp/tree/e0a6377b1b76a0cbb73af9440d76145d048d499d)
 - 4th iteration [Use Case unit tests and HTTP tests](https://github.com/tullo/invoice-mvp/blob/6f41b13fd163fe7c15ad6164b01b20a6f21438cf/usecase/update_invoice_test.go)
 - 3rd iteration [Use Cases with Ports & Adapters Architecture](https://github.com/tullo/invoice-mvp/tree/2d20583dadb7c70d34a6f72102c8d72074d0642f)
