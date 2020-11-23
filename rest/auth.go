@@ -8,8 +8,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/tullo/invoice-mvp/identityprovider/secret"
 )
 
 // Decorator func
@@ -97,4 +101,47 @@ func digestParts(s string) map[string]string {
 		}
 	}
 	return m
+}
+
+// ===== JWT AUTH =============================================================
+
+// JWTAuth decorator
+func JWTAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := extractJwt(r.Header)
+		if verifyJWT(token) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+}
+
+func extractJwt(h http.Header) string {
+	var jwtRegex = regexp.MustCompile(`^Bearer (\S+)$`)
+
+	if hs, ok := h["Authorization"]; ok {
+		for _, value := range hs {
+			if ss := jwtRegex.FindStringSubmatch(value); ss != nil {
+				return ss[1]
+			}
+		}
+	}
+
+	return ""
+}
+
+func verifyJWT(s string) bool {
+	// Parse and validate token using a keyfunc.
+	t, err := jwt.Parse(s, func(t *jwt.Token) (interface{}, error) {
+		// signing method from token header must match expected method.
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		// Public IDP Key = shared HMAC secret
+		return []byte(secret.Shared), nil
+	})
+
+	return err == nil && t.Valid
 }
