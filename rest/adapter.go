@@ -8,11 +8,18 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/tullo/invoice-mvp/domain"
 	"github.com/tullo/invoice-mvp/usecase"
 )
+
+const dateFormat = "Mon, _2 Jan 2006 15:04:05 GMT"
+
+func truncateToSeconds(t time.Time) time.Time {
+	return t.Truncate(time.Duration(time.Second))
+}
 
 // Adapter converts HTTP request data into domain objects.
 type Adapter struct {
@@ -85,16 +92,6 @@ func (a Adapter) readActivity(r *http.Request, uid string) (domain.Activity, err
 	}
 	act.UserID = uid
 	return act, nil
-}
-
-func (a Adapter) writeActivities(as []domain.Activity, w http.ResponseWriter) error {
-	bs, err := json.Marshal(as)
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(bs)
-	return nil
 }
 
 //=============================================================================
@@ -253,7 +250,41 @@ func (a Adapter) ActivitiesHandler(uc usecase.Activities) http.HandlerFunc {
 		if len(as) < 1 {
 			as = []domain.Activity{}
 		}
-		if err := a.writeActivities(as, w); err != nil {
+
+		w.Header().Set("Content-Type", "application/json")
+
+		// Mark response as chacheable by proxys and local caches.
+		w.Header().Set("Cache-Control", "public, max-age=0")
+		activities := NewActivitiesPresenter().Present(as)
+
+		cc := r.Header.Get("Cache-Control")
+		if len(cc) > 0 && strings.Contains(cc, "no-cache") {
+			// Client requested a full refresh
+			w.Header().Set("Last-Modified", activities.LastModified.Format(dateFormat))
+			if _, err := w.Write(activities.Activities); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			return
+		}
+
+		// Respond with StatusNotModified if activities list has not been updated.
+		if lms := r.Header.Get("Last-Modified-Since"); len(lms) > 0 {
+			// Client sent conditional GET request, check mod date.
+			mod, err := time.Parse(dateFormat, lms)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			if truncateToSeconds(mod).Equal(truncateToSeconds(activities.LastModified)) {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+		}
+
+		// Respond activities list.
+		w.Header().Set("Last-Modified", activities.LastModified.Format(dateFormat))
+		if _, err := w.Write(activities.Activities); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}

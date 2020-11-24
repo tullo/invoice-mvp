@@ -18,6 +18,21 @@ type InvoicePresenter interface {
 
 // Implementations
 
+// CacheableActivities decorates activities with last modified date.
+type CacheableActivities struct {
+	Activities   []byte
+	LastModified time.Time
+}
+
+// ActivitiesPresenter implements the presenter interface.
+type ActivitiesPresenter struct {
+}
+
+// NewActivitiesPresenter instantiates an activities presenter.
+func NewActivitiesPresenter() ActivitiesPresenter {
+	return ActivitiesPresenter{}
+}
+
 // DefaultPresenter ...
 type DefaultPresenter struct {
 }
@@ -49,6 +64,20 @@ func NewPDFInvoicePresenter(w http.ResponseWriter, r *http.Request) PDFInvoicePr
 }
 
 // Presentations
+
+// Present knows how to present the activities list combined with the last
+// modified date.
+func (ActivitiesPresenter) Present(i interface{}) CacheableActivities {
+	lm := time.Unix(0, 0)
+	as := i.([]domain.Activity)
+	for _, a := range as {
+		if a.Updated.After(lm) {
+			lm = a.Updated
+		}
+	}
+	b, _ := json.Marshal(i)
+	return CacheableActivities{Activities: b, LastModified: lm}
+}
 
 // Present ...
 func (p DefaultPresenter) Present(i interface{}) {
