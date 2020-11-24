@@ -13,10 +13,10 @@ curl -i https://127.0.0.1:8443/activities \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
-    "name": "Programming" 
+    "name": "Programming"
 }'
 
-# response             
+# response
 HTTP/1.1 201 Created
 Content-Type: application/json
 Location: /activities/1
@@ -29,7 +29,7 @@ curl -i https://127.0.0.1:8443/activities \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json'
 
-# response             
+# response
 HTTP/1.1 200 OK
 Content-Type: application/json
 Content-Length: 47
@@ -46,7 +46,7 @@ curl -i https://127.0.0.1:8443/customers \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
   -H 'Content-Type: application/json' \
   -d '{
-    "name": "3skills" 
+    "name": "3skills"
 }'
 
 # response
@@ -119,7 +119,7 @@ Location: /customers/1/projects/1/rates/activity/1
 
 ---
 
-## POST /customers/{customerId}/invoices/{invoiceId}/bookings
+## POST book/{invoiceId}
 
 ### Add bookings
 
@@ -149,14 +149,14 @@ curl -i https://127.0.0.1:8443/book/1 \
 
 # response
 HTTP/1.1 201 Created
-Location: /customers/1/invoices/1/bookings/1
+Location: /book/1/bookings/1
 ```
 
 > The `Booking` of type `Programming` was succesfully created for the `Project` *instantfoo.com* on `Invoice` 1.
 
 ---
 
-## DELETE /customers/{customerId}/invoices/{invoiceId}/bookings/{bookingId}
+## DELETE /invoices/{invoiceId}/bookings/{bookingId}
 
 ### Delete bookings
 
@@ -169,7 +169,7 @@ The error handling while deleting a non-existing booking will be ignored using a
 ```sh
 curl -i -X DELETE \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8' \
-https://127.0.0.1:8443/customers/1/invoices/1/bookings/1
+https://127.0.0.1:8443/invoices/1/bookings/1
 
 # response
 HTTP/1.1 204 No Content
@@ -284,7 +284,7 @@ Content-Length: 271
 }
 ```
 
-----
+---
 
 ## Basic Auth
 
@@ -312,7 +312,7 @@ Initial request:
 curl -i https://127.0.0.1:8443/customers \
   -H 'Content-Type: application/json' \
   -d '{
-    "name": "3skills" 
+    "name": "3skills"
 }'
 
 HTTP/1.1 401 Unauthorized
@@ -329,7 +329,7 @@ Follow up request using Digest Auth credentials:
 curl -i --digest --user go:time https://127.0.0.1:8443/customers \
   -H 'Content-Type: application/json' \
   -d '{
-    "name": "3skills" 
+    "name": "3skills"
 }'
 
 HTTP/1.1 201 Created

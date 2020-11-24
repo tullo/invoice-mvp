@@ -40,12 +40,12 @@ func (invoice *Invoice) AddPosition(projectID int, activity string, hours float3
 
 	// Create or update a position for an activity on a project.
 	if p, ok := invoice.Positions[projectID][activity]; ok {
-		// update position values
+		// update aggregated position sum values for the activity.
 		p.Hours = p.Hours + hours
 		p.Price = p.Price + hours*rate
 		invoice.Positions[projectID][activity] = p
 	} else {
-		// add position
+		// add position for the activity.
 		position := Position{Hours: hours, Price: hours * rate}
 		invoice.Positions[projectID][activity] = position
 	}

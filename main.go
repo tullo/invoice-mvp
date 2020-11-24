@@ -41,7 +41,7 @@ func main() {
 	deleteBooking := usecase.NewDeleteBooking(repository)
 	db := a.DeleteBookingHandler(deleteBooking)
 	db = rest.JWTAuth(db)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}/bookings/{bookingId:[0-9]+}", db).Methods("DELETE")
+	a.HandleFunc("/invoices/{invoiceId:[0-9]+}/bookings/{bookingId:[0-9]+}", db).Methods("DELETE")
 
 	// Customer
 	createCustomer := usecase.NewCreateCustomer(repository)

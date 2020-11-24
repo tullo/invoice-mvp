@@ -13,8 +13,8 @@ type Activities struct {
 }
 
 // NewActivities instatiates the use case <Get Activities>'.
-func NewActivities(port ActivitiesPort) Activities {
-	return Activities{port: port}
+func NewActivities(p ActivitiesPort) Activities {
+	return Activities{port: p}
 }
 
 // Run implements the use case <Get Activities>'.

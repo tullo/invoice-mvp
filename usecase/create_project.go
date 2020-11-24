@@ -13,11 +13,11 @@ type CreateProject struct {
 }
 
 // NewCreateProject instatiates the use case <Create Project>'.
-func NewCreateProject(port CreateProjectPort) CreateProject {
-	return CreateProject{port: port}
+func NewCreateProject(p CreateProjectPort) CreateProject {
+	return CreateProject{port: p}
 }
 
 // Run implements the use case <Create Project>'.
-func (u CreateProject) Run(project domain.Project) (domain.Project, error) {
-	return u.port.CreateProject(project)
+func (u CreateProject) Run(p domain.Project) (domain.Project, error) {
+	return u.port.CreateProject(p)
 }

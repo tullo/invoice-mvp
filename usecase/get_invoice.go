@@ -13,8 +13,8 @@ type GetInvoice struct {
 }
 
 // NewGetInvoice instatiates the use case <Get Invoice>'.
-func NewGetInvoice(port GetInvoicePort) GetInvoice {
-	return GetInvoice{port: port}
+func NewGetInvoice(p GetInvoicePort) GetInvoice {
+	return GetInvoice{port: p}
 }
 
 // Run implements the use case <Get Invoice>'.

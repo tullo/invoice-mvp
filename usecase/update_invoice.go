@@ -11,11 +11,11 @@ type UpdateInvoicePort interface {
 	// Gets the activity, e.g. 'Programming'.
 	ActivityByID(uid string, id int) domain.Activity
 	// Gets the bookings on this invoice.
-	BookingsByInvoiceID(invoiceID int) []domain.Booking
+	BookingsByInvoiceID(id int) []domain.Booking
 	// Gets the hourly rate used for an activiti on a specific project.
-	RateByProjectIDAndActivityID(projectID int, activityID int) domain.Rate
+	RateByProjectIDAndActivityID(pid int, aid int) domain.Rate
 	// Updates the invoice.
-	UpdateInvoice(invoice domain.Invoice) error
+	UpdateInvoice(i domain.Invoice) error
 }
 
 // UpdateInvoice implements the business logic.
@@ -24,25 +24,24 @@ type UpdateInvoice struct {
 }
 
 // NewUpdateInvoice instatiates the use case <Update Invoice>'.
-func NewUpdateInvoice(port UpdateInvoicePort) UpdateInvoice {
-	return UpdateInvoice{port: port}
+func NewUpdateInvoice(p UpdateInvoicePort) UpdateInvoice {
+	return UpdateInvoice{port: p}
 }
 
 // Run implements the use case <Update Invoice>'.
-func (u UpdateInvoice) Run(uid string, invoice domain.Invoice) error {
-	if invoice.IsReadyForAggregation() {
-		bookings := u.port.BookingsByInvoiceID(invoice.ID)
+func (u UpdateInvoice) Run(uid string, i domain.Invoice) error {
+	if i.IsReadyForAggregation() {
+		bs := u.port.BookingsByInvoiceID(i.ID)
 		// Converts bookings to invoice positions.
-		for _, b := range bookings {
-			// Activity for the booking
-			activity := u.port.ActivityByID(uid, b.ActivityID)
-			// Hourly rate for the activity
-			rate := u.port.RateByProjectIDAndActivityID(b.ProjectID, b.ActivityID)
-			// Add invoice position with aggregated sum for the activity.
-			invoice.AddPosition(b.ProjectID, activity.Name, b.Hours, rate.Price)
+		for _, b := range bs {
+			// Hourly rate for an activity on a project.
+			r := u.port.RateByProjectIDAndActivityID(b.ProjectID, b.ActivityID)
+			// Activity booked
+			a := u.port.ActivityByID(uid, b.ActivityID)
+			i.AddPosition(b.ProjectID, a.Name, b.Hours, r.Price)
 		}
-		invoice.Status = "payment expected"
+		i.Status = "payment expected"
 	}
 
-	return u.port.UpdateInvoice(invoice)
+	return u.port.UpdateInvoice(i)
 }

@@ -297,7 +297,7 @@ func (a Adapter) CreateBookingHandler(uc usecase.CreateBooking) http.HandlerFunc
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		location := fmt.Sprintf("%s/%d", r.URL.String(), created.ID)
+		location := fmt.Sprintf("%s/bookings/%d", r.URL.String(), created.ID)
 		w.Header().Set("Location", location)
 		w.WriteHeader(http.StatusCreated)
 	}

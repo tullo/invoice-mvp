@@ -8,7 +8,7 @@ import "github.com/tullo/invoice-mvp/domain"
 
 // CreateBookingPort is a small and use case specific interface.
 type CreateBookingPort interface {
-	CreateBooking(booking domain.Booking) (domain.Booking, error)
+	CreateBooking(b domain.Booking) (domain.Booking, error)
 }
 
 // CreateBooking implements the business logic.
@@ -17,11 +17,11 @@ type CreateBooking struct {
 }
 
 // NewCreateBooking instatiates the use case <Create Booking>.
-func NewCreateBooking(port CreateBookingPort) CreateBooking {
-	return CreateBooking{port: port}
+func NewCreateBooking(p CreateBookingPort) CreateBooking {
+	return CreateBooking{port: p}
 }
 
 // Run implements the use case <Create Booking>'.
-func (u CreateBooking) Run(booking domain.Booking) (domain.Booking, error) {
-	return u.port.CreateBooking(booking)
+func (u CreateBooking) Run(b domain.Booking) (domain.Booking, error) {
+	return u.port.CreateBooking(b)
 }

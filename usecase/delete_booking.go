@@ -4,7 +4,7 @@ import "github.com/tullo/invoice-mvp/domain"
 
 // DeleteBookingPort is a small and use case specific interface.
 type DeleteBookingPort interface {
-	DeleteBooking(booking domain.Booking) error
+	DeleteBooking(b domain.Booking) error
 }
 
 // DeleteBooking implements the business logic.
@@ -13,11 +13,11 @@ type DeleteBooking struct {
 }
 
 // NewDeleteBooking instatiates the use case <Delete Booking>.
-func NewDeleteBooking(port DeleteBookingPort) DeleteBooking {
-	return DeleteBooking{port: port}
+func NewDeleteBooking(p DeleteBookingPort) DeleteBooking {
+	return DeleteBooking{port: p}
 }
 
 // Run implements the use case <Delete Booking>'.
-func (u DeleteBooking) Run(booking domain.Booking) error {
-	return u.port.DeleteBooking(booking)
+func (u DeleteBooking) Run(b domain.Booking) error {
+	return u.port.DeleteBooking(b)
 }
