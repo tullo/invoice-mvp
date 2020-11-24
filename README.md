@@ -2,9 +2,10 @@
 
 A minimum viable product for invoicing.
 
-## Level-2-Services
+## Level-3: HyperMedia/HATEOAS
 
-- 7th iteration [Transport Layer Encryption and Server Authn](https://github.com/tullo/invoice-mvp/tree/0a5848995a5056fc2c62b1fba3572c4b8629faab) (the current mvp implementation)
+- 8th iteration [User Authorisation](https://github.com/tullo/invoice-mvp/tree/326343f99c518ea4b6cbfd706f790cc296fe03aa) (the current mvp implementation)
+- 7th iteration [Transport Layer Encryption and Server Authn](https://github.com/tullo/invoice-mvp/tree/0a5848995a5056fc2c62b1fba3572c4b8629faab)
 - 6th iteration [Authentication: Basic, Digest, JWT](https://github.com/tullo/invoice-mvp/tree/db1c1f28fb9b5270cf6bb6ee6dc4c12f17a93303)
 - 5th iteration [HAL invoice representation](https://github.com/tullo/invoice-mvp/tree/e0a6377b1b76a0cbb73af9440d76145d048d499d)
 - 4th iteration [Use Case unit tests and HTTP tests](https://github.com/tullo/invoice-mvp/blob/6f41b13fd163fe7c15ad6164b01b20a6f21438cf/usecase/update_invoice_test.go)
