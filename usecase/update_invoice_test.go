@@ -3,6 +3,7 @@ package usecase_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,11 +17,13 @@ import (
 )
 
 const (
-	user     = "f8c39a31-9ced-4761-8a33-b9c628a67510"
-	customer = 1
-	pro1     = 1
-	pro2     = 2
-	inv1     = 1
+	// admin user
+	user       = "f8c39a31-9ced-4761-8a33-b9c628a67510"
+	adminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8"
+	customer   = 1
+	pro1       = 1
+	pro2       = 2
+	inv1       = 1
 )
 const (
 	act1 = iota + 1
@@ -35,9 +38,9 @@ func setupBaseData(r *database.FakeRepository) {
 	r.CreateProject(domain.Project{ID: pro1, Name: "Instanfoo.com", CustomerID: customer})
 	r.CreateProject(domain.Project{ID: pro2, Name: "Covid19tracker.biz", CustomerID: customer})
 	// Activities
-	r.CreateActivity(domain.Activity{ID: 1, Name: "Programming", UserID: user})
-	r.CreateActivity(domain.Activity{ID: 2, Name: "Quality control", UserID: user})
-	r.CreateActivity(domain.Activity{ID: 3, Name: "Project management", UserID: user})
+	r.CreateActivity(domain.Activity{ID: act1, Name: "Programming", UserID: user})
+	r.CreateActivity(domain.Activity{ID: act2, Name: "Quality control", UserID: user})
+	r.CreateActivity(domain.Activity{ID: act3, Name: "Project management", UserID: user})
 	// Project 1
 	r.CreateRate(domain.Rate{ProjectID: pro1, ActivityID: act1, Price: 60}) // Programming
 	r.CreateRate(domain.Rate{ProjectID: pro1, ActivityID: act2, Price: 55}) // Quality control
@@ -135,7 +138,7 @@ func TestHttpInvoiceAggregation(t *testing.T) {
 	// Setup
 	r := database.NewFakeRepository()
 	setupBaseData(r)
-	uc := usecase.NewUpdateInvoice(r)
+	updateInvoice := usecase.NewUpdateInvoice(r)
 
 	// Create bookings for project 1
 	r.CreateBooking(booking(inv1, pro1, act1, 20, "Feature 4321 development"))
@@ -159,13 +162,15 @@ func TestHttpInvoiceAggregation(t *testing.T) {
 	bs, _ := json.Marshal(&i)
 	req, _ := http.NewRequest("PUT", "/customers/1/invoices/1", bytes.NewReader(bs))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", adminToken))
 
 	//=========================================================================
 	// Update invoice using PUT request
 	res := httptest.NewRecorder()
 	a := rest.NewAdapter()
-	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", a.UpdateInvoiceHandler(uc)).Methods("PUT")
+	ui := a.UpdateInvoiceHandler(updateInvoice)
+	ui = rest.JWTAuth(ui)
+	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", ui).Methods("PUT")
 	a.R.ServeHTTP(res, req)
 
 	//=========================================================================

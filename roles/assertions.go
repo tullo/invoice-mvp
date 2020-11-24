@@ -20,12 +20,12 @@ type RoleRepository interface {
 func AssertAdmin(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := rest.ExtractJwt(r.Header)
-		if isAdmin(token) {
-			next.ServeHTTP(w, r) // call request handler
+		if !isAdmin(token) {
+			w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
-		w.WriteHeader(http.StatusUnauthorized) // Unauthorized
+		next.ServeHTTP(w, r) // call request handler
 	}
 }
 
@@ -51,16 +51,16 @@ func AssertOwnsInvoice(next http.HandlerFunc, rep RoleRepository) http.HandlerFu
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := rest.ExtractJwt(r.Header)
 		id, _ := strconv.Atoi(mux.Vars(r)["invoiceId"])
-		// 1. Invoice
+		// Load invoice
 		i := rep.GetInvoice(id)
-		// 2. Customer
+		// Load customer bound to invoice
 		c := rep.CustomerByID(i.CustomerID)
-		// 3. Customer is owned by User
+		// Verify user owns the customer
 		uid := rest.Claim(token, "sub")
-		if c.UserID == uid {
-			next.ServeHTTP(w, r) // call request handler
+		if c.UserID != uid {
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		w.WriteHeader(http.StatusForbidden)
+		next.ServeHTTP(w, r) // call request handler
 	}
 }
