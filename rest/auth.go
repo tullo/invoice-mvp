@@ -3,10 +3,13 @@ package rest
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -166,4 +169,84 @@ func Claim(s string, key string) string {
 	}
 
 	return ""
+}
+
+// OAuth2AccessCodeGrant decorator makes sure the redirect URI is valid.
+func OAuth2AccessCodeGrant(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		var code string
+		var state string
+		if v, ok := q["code"]; ok {
+			code = v[0]
+		}
+		if v, ok := q["userState"]; ok {
+			state = v[0]
+		}
+
+		if len(code) > 0 && len(state) > 0 && state == "Authenticated" {
+			next.ServeHTTP(w, r) // call request handler
+			return
+		}
+
+		w.Header().Set("WWW-Authenticate", "Bearer realm=\"invoice.mvp\"")
+		w.WriteHeader(http.StatusNotAcceptable)
+	}
+}
+
+// OAuth2AccessTokenHandler exchanges the oauth code grant for an access token.
+func (a Adapter) OAuth2AccessTokenHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		//dump, _ := httputil.DumpRequest(r, true)
+		//fmt.Println("request:", string(dump))
+		q := r.URL.Query()
+		var code string
+		if v, ok := q["code"]; ok {
+			code = v[0]
+		}
+
+		t, err := a.exchangeOAuthCodeForAccessToken(code)
+		if err != nil {
+			log.Println(err)
+			w.Header().Set("WWW-Authenticate", "Basic realm=\"invoice.mvp\"")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		if b, err := json.Marshal(&t); err == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(b)
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func (a Adapter) exchangeOAuthCodeForAccessToken(codeGrant string) (AuthInfo, error) {
+
+	// Form data
+	data := url.Values{}
+	// data.Set("user_code", "")
+	// data.Set("scope", "")
+	data.Set("code", codeGrant)
+	data.Set("client_id", a.idp.clientID)
+	data.Set("client_secret", a.idp.clientSecret)
+	data.Set("grant_type", a.idp.grantType)
+	data.Set("redirect_uri", a.idp.redirectURI)
+
+	var ai AuthInfo
+	var c http.Client
+	res, err := c.PostForm(a.idp.tokenURI, data)
+	if err != nil {
+		return ai, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return ai, err
+	}
+	if err := json.Unmarshal(body, &ai); err != nil {
+		return ai, err
+	}
+	return ai, nil
 }

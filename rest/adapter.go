@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,12 +24,51 @@ func truncateToSeconds(t time.Time) time.Time {
 
 // Adapter converts HTTP request data into domain objects.
 type Adapter struct {
-	R *mux.Router
+	R   *mux.Router
+	idp AuthConfig
 }
 
-// NewAdapter creates an adapter instance.
+// NewAdapter instantiates an adapter.
 func NewAdapter() Adapter {
-	return Adapter{mux.NewRouter()}
+	var idp AuthConfig
+	if v, ok := os.LookupEnv("CLIENT_ID"); ok {
+		idp.clientID = v
+	}
+	if v, ok := os.LookupEnv("CLIENT_SECRET"); ok {
+		idp.clientSecret = v
+	}
+	if v, ok := os.LookupEnv("GRANT_TYPE"); ok {
+		idp.grantType = v
+	}
+	if v, ok := os.LookupEnv("REDIRECT_URI"); ok {
+		idp.redirectURI = v
+	}
+	if v, ok := os.LookupEnv("TOKEN_URI"); ok {
+		idp.tokenURI = v
+	}
+
+	var a Adapter
+	a.R = mux.NewRouter()
+	a.idp = idp
+
+	return a
+}
+
+// AuthInfo represents incomming data from the identity provider.
+type AuthInfo struct {
+	AccessToken string  `json:"access_token"`
+	ExpiresIn   float64 `json:"expires_in"`
+	TokenType   string  `json:"token_type"`
+	UserID      string  `json:"userId"`
+}
+
+// AuthConfig holds configuration for external IDP integration.
+type AuthConfig struct {
+	clientID     string
+	clientSecret string
+	grantType    string
+	tokenURI     string
+	redirectURI  string // Must match FA config for "Authorized redirect URLs"
 }
 
 // ListenAndServe launches a web server on port 8080.

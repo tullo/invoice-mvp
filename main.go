@@ -21,6 +21,9 @@ func main() {
 	repository := database.NewFakeRepository()
 	a := rest.NewAdapter()
 
+	// IDP redirects to this URI after user authentication
+	a.HandleFunc("/auth/token", rest.OAuth2AccessCodeGrant(a.OAuth2AccessTokenHandler())).Methods("GET")
+
 	// Activities
 	activities := usecase.NewActivities(repository)
 	ga := a.ActivitiesHandler(activities)
