@@ -1,41 +1,57 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
+
+	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Read the CA signed certificate.
-	cert, err := ioutil.ReadFile("../localhost+2.pem")
+	err := godotenv.Load("../.env")
 	if err != nil {
-		log.Fatal("Couldn't load certificate file", err)
+		log.Fatal("Error loading .env file")
 	}
-	// Add cert to the pool of trusted certificates.
-	certPool := x509.NewCertPool()
-	certPool.AppendCertsFromPEM(cert)
 
-	// Use trusted server certificate for client transport config.
-	var c tls.Config
-	c.RootCAs = certPool
-	var t http.Transport
-	t.TLSClientConfig = &c
-
-	var client http.Client
-	client.Transport = &t
-
-	// TLS-based authentification. Client makes sure to only talk to servers
-	// in possession of the private key used to sign the certificate.
-	req, _ := http.NewRequest("GET", "https://127.0.0.1:8443/activities", nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR28gSW52b2ljZXIiLCJhZG1pbiI6dHJ1ZSwic3ViIjoiZjhjMzlhMzEtOWNlZC00NzYxLThhMzMtYjljNjI4YTY3NTEwIn0.WI6cRXYnYqUAV6qqNtf4B8PdGMgKuHqENQP5N_iCZL8")
-	res, err := client.Do(req)
-	res.Body.Close()
+	client, err := fusionauth.Client(true)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Status", res.Status)
+
+	jwtToken := "header.payload.signature"
+	status := activities(client, jwtToken)
+	log.Println("Activities: initial response:", status)
+	if status == http.StatusUnauthorized {
+		log.Println("Login and retrieve JWT access token.")
+		data := make(url.Values)
+		data.Set("loginId", os.Getenv("TEST_LOGIN"))
+		data.Set("password", os.Getenv("TEST_PASSWD"))
+		auth, err := fusionauth.Login(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jwtToken = auth.AccessToken
+		status = activities(client, jwtToken)
+		log.Println("Activities: Authorized Request:", status)
+	}
+}
+
+func activities(client *http.Client, token string) int {
+	log.Println("Activities: token:", token)
+
+	req, _ := http.NewRequest("GET", "https://127.0.0.1:8443/activities", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	res, err := client.Do(req)
+	res.Body.Close()
+	if err != nil {
+		log.Printf("%v", err)
+		return http.StatusInternalServerError
+	}
+	return res.StatusCode
 }

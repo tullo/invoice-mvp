@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/tullo/invoice-mvp/identityprovider/secret"
 )
 
