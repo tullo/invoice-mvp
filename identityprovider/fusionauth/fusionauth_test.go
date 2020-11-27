@@ -106,18 +106,20 @@ func TestLogin(t *testing.T) {
 		wantErr bool
 		wantAlg string
 	}{
-		{
-			name: "Valid Login, App Specific Token Signing Method",
-			args: args{
-				os.Getenv("TEST_LOGIN"),
-				os.Getenv("TEST_PASSWD"),
-				os.Getenv("CLIENT_ID"),
-				os.Getenv("CLIENT_SECRET"),
-				os.Getenv("REDIRECT_URI"),
+		/*
+			{
+				name: "Valid Login, App Specific Token Signing Method",
+				args: args{
+					os.Getenv("TEST_LOGIN"),
+					os.Getenv("TEST_PASSWD"),
+					os.Getenv("CLIENT_ID"),
+					os.Getenv("CLIENT_SECRET"),
+					os.Getenv("REDIRECT_URI"),
+				},
+				wantErr: false,
+				wantAlg: "RS256",
 			},
-			wantErr: false,
-			wantAlg: "RS256",
-		},
+		*/
 		{
 			name: "Default Token Signing Method",
 			args: args{

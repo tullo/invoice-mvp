@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/joho/godotenv"
+	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
 	"github.com/tullo/invoice-mvp/rest"
 	"gopkg.in/go-playground/assert.v1"
 )
@@ -29,7 +30,7 @@ func TestAuthAccessCodeGrant(t *testing.T) {
 	data.Set("response_type", "code")
 	data.Set("loginId", os.Getenv("TEST_LOGIN"))
 	data.Set("password", os.Getenv("TEST_PASSWD"))
-	data.Set("client_id", os.Getenv("CLIENT_ID"))       // Invoice MVP
+	data.Set("client_id", os.Getenv("TEST_CLIENT_ID"))  // Test application
 	data.Set("redirect_uri", os.Getenv("REDIRECT_URI")) // Must match FA config.
 
 	// FA authorize:
@@ -85,7 +86,7 @@ func TestAuthAccessToken(t *testing.T) {
 	data.Set("response_type", "code")
 	data.Set("loginId", os.Getenv("TEST_LOGIN"))
 	data.Set("password", os.Getenv("TEST_PASSWD"))
-	data.Set("client_id", os.Getenv("CLIENT_ID"))       // Invoice MVP
+	data.Set("client_id", os.Getenv("TEST_CLIENT_ID"))  // Test application
 	data.Set("redirect_uri", os.Getenv("REDIRECT_URI")) // Must match FA config.
 
 	// FA authorize:
@@ -135,8 +136,8 @@ func TestAuthAccessToken(t *testing.T) {
 	//data.Set("scope", "")
 	data.Set("grant_type", "authorization_code")
 	data.Set("redirect_uri", os.Getenv("REDIRECT_URI")) // Must match FA config.
-	data.Set("client_id", os.Getenv("CLIENT_ID"))       // Invoice MVP
-	data.Set("client_secret", os.Getenv("CLIENT_SECRET"))
+	data.Set("client_id", os.Getenv("TEST_CLIENT_ID"))  // Test application
+	data.Set("client_secret", os.Getenv("TEST_CLIENT_SECRET"))
 	data.Set("code", q["code"][0])
 
 	var client http.Client
@@ -193,9 +194,9 @@ func TestOAuth2Handler(t *testing.T) {
 	// POST form data
 	data := url.Values{}
 	data.Set("response_type", "code")
-	data.Set("loginId", os.Getenv("TEST_LOGIN"))
-	data.Set("password", os.Getenv("TEST_PASSWD"))
-	data.Set("client_id", os.Getenv("CLIENT_ID"))       // Invoice MVP
+	data.Set("loginId", os.Getenv("MVP_USERNAME"))
+	data.Set("password", os.Getenv("MVP_PASSWORD"))
+	data.Set("client_id", os.Getenv("CLIENT_ID"))       // Test application
 	data.Set("redirect_uri", os.Getenv("REDIRECT_URI")) // Must match FA config.
 
 	// FA authorize:
@@ -259,7 +260,7 @@ func TestOAuth2Handler(t *testing.T) {
 		t.Error(err)
 	}
 
-	var auth rest.AuthInfo
+	var auth fusionauth.AuthInfo
 	if err := json.Unmarshal(body, &auth); err != nil {
 		t.Fatal(err)
 	}

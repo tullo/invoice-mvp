@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
+
 	"github.com/gorilla/mux"
 	"github.com/tullo/invoice-mvp/domain"
 	"github.com/tullo/invoice-mvp/usecase"
@@ -26,26 +28,29 @@ func truncateToSeconds(t time.Time) time.Time {
 // Adapter converts HTTP request data into domain objects.
 type Adapter struct {
 	R   *mux.Router
-	idp AuthConfig
+	idp fusionauth.AuthConfig
 }
 
 // NewAdapter instantiates an adapter.
 func NewAdapter() Adapter {
-	var idp AuthConfig
+	var idp fusionauth.AuthConfig
 	if v, ok := os.LookupEnv("CLIENT_ID"); ok {
-		idp.clientID = v
+		idp.ClientID = v
 	}
 	if v, ok := os.LookupEnv("CLIENT_SECRET"); ok {
-		idp.clientSecret = v
+		idp.ClientSecret = v
 	}
 	if v, ok := os.LookupEnv("GRANT_TYPE"); ok {
-		idp.grantType = v
+		idp.GrantType = v
+	}
+	if v, ok := os.LookupEnv("IDP_ISSUER"); ok {
+		idp.Issuer = v
 	}
 	if v, ok := os.LookupEnv("REDIRECT_URI"); ok {
-		idp.redirectURI = v
+		idp.RedirectURI = v
 	}
 	if v, ok := os.LookupEnv("TOKEN_URI"); ok {
-		idp.tokenURI = v
+		idp.TokenURI = v
 	}
 
 	var a Adapter
@@ -53,23 +58,6 @@ func NewAdapter() Adapter {
 	a.idp = idp
 
 	return a
-}
-
-// AuthInfo represents incomming data from the identity provider.
-type AuthInfo struct {
-	AccessToken string  `json:"access_token"`
-	ExpiresIn   float64 `json:"expires_in"`
-	TokenType   string  `json:"token_type"`
-	UserID      string  `json:"userId"`
-}
-
-// AuthConfig holds configuration for external IDP integration.
-type AuthConfig struct {
-	clientID     string
-	clientSecret string
-	grantType    string
-	tokenURI     string
-	redirectURI  string // Must match FA config for "Authorized redirect URLs"
 }
 
 // ListenAndServe launches a web server on port 8080.

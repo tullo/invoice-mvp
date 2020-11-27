@@ -17,8 +17,58 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
 	"github.com/tullo/invoice-mvp/identityprovider/secret"
 )
+
+var (
+	audience string
+	issuer   string
+	km       map[string]fusionauth.Key
+	realm    string
+)
+
+// Realm returns the configured realm by consulting the
+// environment variable "AUTH_REALM".
+func Realm() string {
+	if len(realm) > 0 {
+		return realm
+	}
+
+	if v, ok := os.LookupEnv("AUTH_REALM"); ok {
+		realm = v
+	}
+
+	return realm
+}
+
+// idpAudience returns the configured issuer by consulting the
+// environment variable "IDP_ISSUER".
+func idpAudience() string {
+	if len(audience) > 0 {
+		return audience
+	}
+
+	if v, ok := os.LookupEnv("CLIENT_ID"); ok {
+		audience = v
+	}
+
+	return audience
+}
+
+// tokenIssuer returns the configured issuer by consulting the
+// environment variable "IDP_ISSUER".
+func idpIssuer() string {
+	if len(issuer) > 0 {
+		return issuer
+	}
+
+	if v, ok := os.LookupEnv("IDP_ISSUER"); ok {
+		issuer = v
+	}
+
+	return issuer
+}
 
 // Decorator func
 func decorator(f func()) func() {
@@ -28,6 +78,8 @@ func decorator(f func()) func() {
 		log.Println("after fn call")
 	}
 }
+
+// ===== BASIC AUTH ===========================================================
 
 // BasicAuth decorator
 func BasicAuth(next Handler) Handler {
@@ -39,7 +91,7 @@ func BasicAuth(next Handler) Handler {
 				return
 			}
 		}
-		w.Header().Set("WWW-Authenticate", `Basic realm="invoice.mvp"`)
+		w.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", realm))
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 }
@@ -47,7 +99,6 @@ func BasicAuth(next Handler) Handler {
 // ===== DIGEST AUTH ==========================================================
 
 const password = "time"
-const realm = "invoice.mvp"
 const nonce = "UAZs1dp3wX5BtXEpoCXKO2lHhap564rX"
 const opaque = "XF3tAJ3483jUUAUJJQJJAHDQP01MJHD"
 const digest = "Digest"
@@ -117,7 +168,7 @@ func JWTAuth(next Handler) Handler {
 			next(r.Context(), w, r)
 			return
 		}
-		w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
+		w.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", realm))
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 }
@@ -149,8 +200,25 @@ func HMACKeyFunc(t *jwt.Token) (interface{}, error) {
 }
 
 func verifyJWT(s string) bool {
+	//	log.Println("verifyJWT:", s)
+	if len(s) == 0 {
+		log.Println("Got an empty token: unable to verify")
+		return false
+	}
+
+	// Verify unparsed token parts.
+	parts := strings.Split(s, ".")
+	if len(parts) < 3 {
+		log.Println("Invalid token parts count: unable to verify")
+		return false
+	}
+
+	var po []jwt.ParserOption
+	po = append(po, jwt.WithIssuer(idpIssuer())) // rest.Realm()
+	po = append(po, jwt.WithAudience(idpAudience()))
+
 	// Parse and validate token using keyfunc.
-	t, err := jwt.Parse(s, HMACKeyFunc)
+	t, err := jwt.Parse(s, RS256KeyFunc, po...)
 
 	return err == nil && t.Valid
 }
@@ -158,7 +226,7 @@ func verifyJWT(s string) bool {
 // Claim returns JWT claim matching the key parameter.
 func Claim(s string, key string) string {
 	// Parse and validate token using keyfunc.
-	t, err := jwt.Parse(s, HMACKeyFunc)
+	t, err := jwt.Parse(s, RS256KeyFunc)
 	if err != nil {
 		return ""
 	}
@@ -190,7 +258,7 @@ func OAuth2AccessCodeGrant(next Handler) Handler {
 			return
 		}
 
-		w.Header().Set("WWW-Authenticate", "Bearer realm=\"invoice.mvp\"")
+		w.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", realm))
 		w.WriteHeader(http.StatusNotAcceptable)
 	}
 }
@@ -209,7 +277,7 @@ func (a Adapter) OAuth2AccessTokenHandler() Handler {
 		t, err := a.exchangeOAuthCodeForAccessToken(code)
 		if err != nil {
 			log.Println(err)
-			w.Header().Set("WWW-Authenticate", "Basic realm=\"invoice.mvp\"")
+			w.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", realm))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -223,21 +291,21 @@ func (a Adapter) OAuth2AccessTokenHandler() Handler {
 	}
 }
 
-func (a Adapter) exchangeOAuthCodeForAccessToken(codeGrant string) (AuthInfo, error) {
+func (a Adapter) exchangeOAuthCodeForAccessToken(codeGrant string) (fusionauth.AuthInfo, error) {
 
 	// Form data
 	data := url.Values{}
 	// data.Set("user_code", "")
 	// data.Set("scope", "")
 	data.Set("code", codeGrant)
-	data.Set("client_id", a.idp.clientID)
-	data.Set("client_secret", a.idp.clientSecret)
-	data.Set("grant_type", a.idp.grantType)
-	data.Set("redirect_uri", a.idp.redirectURI)
+	data.Set("client_id", a.idp.ClientID)
+	data.Set("client_secret", a.idp.ClientSecret)
+	data.Set("grant_type", a.idp.GrantType)
+	data.Set("redirect_uri", a.idp.RedirectURI)
 
-	var ai AuthInfo
+	var ai fusionauth.AuthInfo
 	var c http.Client
-	res, err := c.PostForm(a.idp.tokenURI, data)
+	res, err := c.PostForm(a.idp.TokenURI, data)
 	if err != nil {
 		return ai, err
 	}
@@ -250,4 +318,90 @@ func (a Adapter) exchangeOAuthCodeForAccessToken(codeGrant string) (AuthInfo, er
 		return ai, err
 	}
 	return ai, nil
+}
+
+// ===== IDENTITY PROVIDER ====================================================
+
+// RS256KeyFunc verifies the token signing method and returns
+// the public signing key, matching the key identified by the
+// tokens "kid" header value, used for signature validation.
+func RS256KeyFunc(t *jwt.Token) (interface{}, error) {
+	if _, ok := t.Header["alg"]; !ok {
+		return nil, fmt.Errorf("Expected 'alg' to exist in token header")
+	}
+	if _, ok := t.Header["kid"]; !ok {
+		return nil, fmt.Errorf("Expected 'kid' to exist in token header")
+	}
+	halg := stringVal(t.Header["alg"])
+	if len(halg) < 1 {
+		return nil, fmt.Errorf("Unexpected 'alg' value,  got: %v", t.Header["alg"])
+	}
+	hkid := stringVal(t.Header["kid"])
+	if len(hkid) < 1 {
+		return nil, fmt.Errorf("Unexpected 'kid' value,  got: %v", t.Header["kid"])
+	}
+
+	// use the prefetched public signing key
+	key, ok := km[hkid]
+	if !ok {
+		log.Printf("JSON key with ID=[%s] not found.", hkid)
+		// This execution path covers three cases:
+		if len(km) < 1 {
+			// (1) The app was just launched and no keys are fetched from the IDP yet.
+			log.Print("Loading JSON Key Set from IDP service.")
+			cnt, err := loadJSONKeySet()
+			if err != nil {
+				log.Println("loadJSONKeySet", err.Error())
+			}
+			log.Printf("Loaded keyset contains [%d] keys.\n", cnt)
+		} else {
+			// (2) A new signing key has been setup for this app in the IDP configuration.
+			log.Print("Reloading JSON Key Set from IDP service")
+			cnt, err := loadJSONKeySet()
+			if err != nil {
+				log.Println("loadJSONKeySet", err.Error())
+			}
+			log.Printf("Reloaded keyset contains [%d] keys.\n", cnt)
+		}
+
+		key, ok = km[hkid]
+		if !ok {
+			// (3) The kid does not match any of the published signing keys.
+			return nil, fmt.Errorf("Key ID %s not found in published IDP key set", hkid)
+		}
+	}
+
+	// Check signing method in use, Only RS256 is supported.
+	m := jwt.GetSigningMethod(key.Alg)
+	if m.Alg() != halg || m.Alg() != "RS256" {
+		return nil, fmt.Errorf("Unexpected signing method in token-header: %v, expected: %v", halg, m.Alg())
+	}
+
+	// Public Key instance of the Token-Issuer
+	return key.Instance, nil
+}
+
+func loadJSONKeySet() (int, error) {
+	// Retrieve the published JSON Web Key Set (JWKS).
+	ks, err := fusionauth.JSONWebKeySet(fusionauth.JWKSEndpoint)
+	if err != nil {
+		log.Fatal("Could not retrieve published key set")
+	}
+	useFilter := "sig"
+	km = fusionauth.PublicSigningKeyMap(ks.Keys, useFilter)
+	km, err = fusionauth.RetrievePublicKeyInstances(km)
+	if err != nil {
+		return 0, fmt.Errorf("loadJSONKeySet() expected no error, got [%v]", err)
+	}
+	return len(km), nil
+}
+
+// Pulls out the concrete string value of the interface.
+func stringVal(i interface{}) string {
+	switch v := i.(type) {
+	case string:
+		return v
+	default:
+		return ""
+	}
 }

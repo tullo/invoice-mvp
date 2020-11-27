@@ -2,6 +2,7 @@ package roles
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,7 +23,7 @@ func AssertAdmin(next rest.Handler) rest.Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		token := rest.ExtractJwt(r.Header)
 		if !isAdmin(token) {
-			w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
+			w.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", rest.Realm()))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

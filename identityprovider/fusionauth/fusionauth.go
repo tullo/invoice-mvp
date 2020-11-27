@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go/v4"
-	"github.com/tullo/invoice-mvp/rest"
 )
 
 const (
@@ -44,6 +43,24 @@ type Key struct {
 // KeySet holds a JSON Web Key Set (JWKS)
 type KeySet struct {
 	Keys []Key `json:"keys,omitempty"`
+}
+
+// AuthInfo represents incomming data from the identity provider.
+type AuthInfo struct {
+	AccessToken string  `json:"access_token"`
+	ExpiresIn   float64 `json:"expires_in"`
+	TokenType   string  `json:"token_type"`
+	UserID      string  `json:"userId"`
+}
+
+// AuthConfig holds configuration for external IDP integration.
+type AuthConfig struct {
+	ClientID     string
+	ClientSecret string
+	GrantType    string
+	Issuer       string
+	TokenURI     string
+	RedirectURI  string // Must match FA config for "Authorized redirect URLs"
 }
 
 func tlsTransportConfig() (http.RoundTripper, error) {
@@ -159,12 +176,13 @@ func accessCodeGrant(data url.Values) (string, error) {
 
 // Login uses the provided user credentials to login with
 // the IDM and converts the resulting code grant to JWT token.
-func Login(data url.Values) (rest.AuthInfo, error) {
+func Login(data url.Values) (AuthInfo, error) {
 
-	var auth rest.AuthInfo
+	var auth AuthInfo
 
 	grant, err := accessCodeGrant(data)
 	if err != nil {
+		log.Println("9999999999", err)
 		return auth, err
 	}
 
