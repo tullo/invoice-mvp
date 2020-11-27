@@ -49,7 +49,7 @@ func TestHttpAddBooking(t *testing.T) {
 	a := rest.NewAdapter()
 	cb := a.CreateBookingHandler(createBooking)
 	cb = rest.JWTAuth(roles.AssertOwnsInvoice(cb, r))
-	a.HandleFunc("/book/{invoiceId:[0-9]+}", cb).Methods("POST")
+	a.Handle("/book/{invoiceId:[0-9]+}", cb).Methods("POST")
 	a.R.ServeHTTP(res, req)
 
 	//=========================================================================

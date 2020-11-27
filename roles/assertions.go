@@ -1,6 +1,7 @@
 package roles
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -17,15 +18,15 @@ type RoleRepository interface {
 }
 
 // AssertAdmin decorator.
-func AssertAdmin(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func AssertAdmin(next rest.Handler) rest.Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		token := rest.ExtractJwt(r.Header)
 		if !isAdmin(token) {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		next.ServeHTTP(w, r) // call request handler
+		next(ctx, w, r) // call request handler
 	}
 }
 
@@ -47,8 +48,8 @@ func isAdmin(s string) bool {
 }
 
 // AssertOwnsInvoice decorator
-func AssertOwnsInvoice(next http.HandlerFunc, rep RoleRepository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func AssertOwnsInvoice(next rest.Handler, rep RoleRepository) rest.Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		token := rest.ExtractJwt(r.Header)
 		id, _ := strconv.Atoi(mux.Vars(r)["invoiceId"])
 		// Load invoice
@@ -61,6 +62,6 @@ func AssertOwnsInvoice(next http.HandlerFunc, rep RoleRepository) http.HandlerFu
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		next.ServeHTTP(w, r) // call request handler
+		next(ctx, w, r) // call request handler
 	}
 }

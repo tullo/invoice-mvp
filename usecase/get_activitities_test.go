@@ -33,7 +33,7 @@ func TestHttpGetActivities(t *testing.T) {
 	a := rest.NewAdapter()
 	ga := a.ActivitiesHandler(activities)
 	ga = rest.JWTAuth(ga)
-	a.HandleFunc("/activities", ga).Methods("GET")
+	a.Handle("/activities", ga).Methods("GET")
 
 	res := httptest.NewRecorder()
 	a.R.ServeHTTP(res, req)
@@ -51,6 +51,7 @@ func TestHttpGetActivities(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var data []domain.Activity
 	if err := json.Unmarshal(body, &data); err != nil {
 		t.Fatal(err)

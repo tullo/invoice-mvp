@@ -243,7 +243,7 @@ func TestOAuth2Handler(t *testing.T) {
 	rr := httptest.NewRecorder()
 	a := rest.NewAdapter()
 	// IDP redirects to this URI after user authentication
-	a.HandleFunc("/auth/token", rest.OAuth2AccessCodeGrant(a.OAuth2AccessTokenHandler())).Methods("GET")
+	a.Handle("/auth/token", rest.OAuth2AccessCodeGrant(a.OAuth2AccessTokenHandler())).Methods("GET")
 
 	req, _ := http.NewRequest("GET", loc, nil)
 	a.R.ServeHTTP(rr, req)

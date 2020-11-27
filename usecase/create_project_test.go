@@ -44,7 +44,7 @@ func TestHttpCreateProjectUnauthorized(t *testing.T) {
 	a := rest.NewAdapter()
 	cp := a.CreateProjectHandler(createProject)
 	cp = rest.JWTAuth(roles.AssertAdmin(cp))
-	a.HandleFunc("/customers/{customerId:[0-9]+}/projects", cp).Methods("POST")
+	a.Handle("/customers/{customerId:[0-9]+}/projects", cp).Methods("POST")
 	a.R.ServeHTTP(res, req)
 
 	//=========================================================================
@@ -72,7 +72,7 @@ func TestHttpCreateProjectAuthorized(t *testing.T) {
 	a := rest.NewAdapter()
 	cp := a.CreateProjectHandler(createProject)
 	cp = rest.JWTAuth(roles.AssertAdmin(cp))
-	a.HandleFunc("/customers/{customerId:[0-9]+}/projects", cp).Methods("POST")
+	a.Handle("/customers/{customerId:[0-9]+}/projects", cp).Methods("POST")
 	a.R.ServeHTTP(res, req)
 
 	//=========================================================================

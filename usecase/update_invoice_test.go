@@ -170,7 +170,7 @@ func TestHttpInvoiceAggregation(t *testing.T) {
 	a := rest.NewAdapter()
 	ui := a.UpdateInvoiceHandler(updateInvoice)
 	ui = rest.JWTAuth(ui)
-	a.HandleFunc("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", ui).Methods("PUT")
+	a.Handle("/customers/{customerId:[0-9]+}/invoices/{invoiceId:[0-9]+}", ui).Methods("PUT")
 	a.R.ServeHTTP(res, req)
 
 	//=========================================================================

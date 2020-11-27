@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -83,10 +84,30 @@ func (a Adapter) ListenAndServeTLS() {
 	_ = http.ListenAndServeTLS(":8443", "localhost+2.pem", "localhost+2-key.pem", a.R)
 }
 
-// HandleFunc creates a route and maps it to a path and handler.
-func (a Adapter) HandleFunc(path string,
-	f func(http.ResponseWriter, *http.Request)) *mux.Route {
-	return a.R.NewRoute().Path(path).HandlerFunc(f)
+// Handler is a type that handles http requests.
+type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
+
+// Handle creates a route and maps it to a path and handler.
+func (a Adapter) Handle(path string, handler Handler) *mux.Route {
+
+	h := func(w http.ResponseWriter, r *http.Request) {
+		/*
+			// Start or expand a distributed trace.
+			ctx := r.Context()
+			ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, r.URL.Path)
+			defer span.End()
+
+			// Set the context with the required values to
+			// process the request.
+			v := Values{
+				TraceID: span.SpanContext().TraceID.String(),
+				Now:     time.Now(),
+			}
+			ctx = context.WithValue(ctx, KeyValues, &v)
+		*/
+		handler(r.Context(), w, r)
+	}
+	return a.R.NewRoute().Path(path).HandlerFunc(h)
 }
 
 // InvoicePresenter returns a presenter matching the 'Accept' request header.
@@ -279,8 +300,8 @@ func (a Adapter) readRate(r *http.Request) (domain.Rate, error) {
 
 // ActivitiesHandler returns a handler that knows how to retrieve activities
 // for a user.
-func (a Adapter) ActivitiesHandler(uc usecase.Activities) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) ActivitiesHandler(uc usecase.Activities) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		uid, err := a.currentUser(r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -331,8 +352,8 @@ func (a Adapter) ActivitiesHandler(uc usecase.Activities) http.HandlerFunc {
 }
 
 // CreateActivityHandler returns a handler that knows how to create an activity.
-func (a Adapter) CreateActivityHandler(uc usecase.CreateActivity) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) CreateActivityHandler(uc usecase.CreateActivity) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		uid, err := a.currentUser(r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -355,8 +376,8 @@ func (a Adapter) CreateActivityHandler(uc usecase.CreateActivity) http.HandlerFu
 }
 
 // CreateBookingHandler returns a handler that knows how to create a booking.
-func (a Adapter) CreateBookingHandler(uc usecase.CreateBooking) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) CreateBookingHandler(uc usecase.CreateBooking) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		b, err := a.readBooking(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -375,8 +396,8 @@ func (a Adapter) CreateBookingHandler(uc usecase.CreateBooking) http.HandlerFunc
 }
 
 // DeleteBookingHandler returns a handler that knows how to delete a booking.
-func (a Adapter) DeleteBookingHandler(uc usecase.DeleteBooking) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) DeleteBookingHandler(uc usecase.DeleteBooking) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(mux.Vars(r)["invoiceId"])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -402,8 +423,8 @@ func (a Adapter) DeleteBookingHandler(uc usecase.DeleteBooking) http.HandlerFunc
 }
 
 // CreateCustomerHandler returns a handler that knows how to create a customer.
-func (a Adapter) CreateCustomerHandler(uc usecase.CreateCustomer) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) CreateCustomerHandler(uc usecase.CreateCustomer) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		uid, err := a.currentUser(r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -426,9 +447,9 @@ func (a Adapter) CreateCustomerHandler(uc usecase.CreateCustomer) http.HandlerFu
 }
 
 // CreateInvoiceHandler returns a handler that knows how to create an invoice.
-func (a Adapter) CreateInvoiceHandler(uc usecase.CreateInvoice) http.HandlerFunc {
+func (a Adapter) CreateInvoiceHandler(uc usecase.CreateInvoice) Handler {
 	// A Closure that is closing over the createInvoice usecase instance.
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		i, err := a.readInvoice(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -449,8 +470,8 @@ func (a Adapter) CreateInvoiceHandler(uc usecase.CreateInvoice) http.HandlerFunc
 
 // GetInvoiceHandler returns a handler that knows how to deliver an invoice in
 // either JSON or PDF format.
-func (a Adapter) GetInvoiceHandler(uc usecase.GetInvoice) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) GetInvoiceHandler(uc usecase.GetInvoice) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		// extracts invoiceId from the URI
 		id, err := strconv.Atoi(mux.Vars(r)["invoiceId"])
 		if err != nil {
@@ -477,8 +498,8 @@ func (a Adapter) GetInvoiceHandler(uc usecase.GetInvoice) http.HandlerFunc {
 }
 
 // UpdateInvoiceHandler returns a handler that knows how to update an ivoice.
-func (a Adapter) UpdateInvoiceHandler(updateInvoice usecase.UpdateInvoice) http.HandlerFunc {
-	handler := func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) UpdateInvoiceHandler(updateInvoice usecase.UpdateInvoice) Handler {
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		uid, err := a.currentUser(r)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -502,8 +523,8 @@ func (a Adapter) UpdateInvoiceHandler(updateInvoice usecase.UpdateInvoice) http.
 }
 
 // CreateProjectHandler returns a handler that knows how to create a project.
-func (a Adapter) CreateProjectHandler(uc usecase.CreateProject) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) CreateProjectHandler(uc usecase.CreateProject) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		p, err := a.readProject(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -522,8 +543,8 @@ func (a Adapter) CreateProjectHandler(uc usecase.CreateProject) http.HandlerFunc
 }
 
 // CreateRateHandler returns a handler that knows how to create a rate.
-func (a Adapter) CreateRateHandler(uc usecase.CreateRate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) CreateRateHandler(uc usecase.CreateRate) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		rate, err := a.readRate(r)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

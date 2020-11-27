@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -29,12 +30,12 @@ func decorator(f func()) func() {
 }
 
 // BasicAuth decorator
-func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
+func BasicAuth(next Handler) Handler {
 	// closure func block
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		if username, password, ok := r.BasicAuth(); ok {
 			if username == os.Getenv("MVP_USERNAME") && password == os.Getenv("MVP_PASSWORD") {
-				next.ServeHTTP(w, r) // call request handler
+				next(ctx, w, r) // call request handler
 				return
 			}
 		}
@@ -52,8 +53,8 @@ const opaque = "XF3tAJ3483jUUAUJJQJJAHDQP01MJHD"
 const digest = "Digest"
 
 // DigestAuth decorator
-func DigestAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func DigestAuth(next Handler) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if strings.HasPrefix(auth, digest) {
 			m := digestParts(auth[len(digest)+1:])
@@ -68,7 +69,7 @@ func DigestAuth(next http.HandlerFunc) http.HandlerFunc {
 			h3 := hash(fmt.Sprintf("%s:%s:%08x:%s:%s:%s", h1, m["nonce"], nc, m["cnonce"], m["qop"], h2))
 
 			if h3 == m["response"] { // client and server response hashes must match
-				next.ServeHTTP(w, r) // call request handler
+				next(ctx, w, r) // call request handler
 				return
 			}
 		}
@@ -109,11 +110,11 @@ func digestParts(s string) map[string]string {
 // ===== JWT AUTH =============================================================
 
 // JWTAuth decorator
-func JWTAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func JWTAuth(next Handler) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		token := ExtractJwt(r.Header)
 		if verifyJWT(token) {
-			next.ServeHTTP(w, r)
+			next(r.Context(), w, r)
 			return
 		}
 		w.Header().Set("WWW-Authenticate", `Bearer realm="invoice.mvp"`)
@@ -172,8 +173,8 @@ func Claim(s string, key string) string {
 }
 
 // OAuth2AccessCodeGrant decorator makes sure the redirect URI is valid.
-func OAuth2AccessCodeGrant(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func OAuth2AccessCodeGrant(next Handler) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		var code string
 		var state string
@@ -185,7 +186,7 @@ func OAuth2AccessCodeGrant(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if len(code) > 0 && len(state) > 0 && state == "Authenticated" {
-			next.ServeHTTP(w, r) // call request handler
+			next(ctx, w, r) // call request handler
 			return
 		}
 
@@ -195,8 +196,8 @@ func OAuth2AccessCodeGrant(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // OAuth2AccessTokenHandler exchanges the oauth code grant for an access token.
-func (a Adapter) OAuth2AccessTokenHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a Adapter) OAuth2AccessTokenHandler() Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		//dump, _ := httputil.DumpRequest(r, true)
 		//fmt.Println("request:", string(dump))
 		q := r.URL.Query()
