@@ -121,10 +121,13 @@ func (a Adapter) InvoicePresenter(w http.ResponseWriter, r *http.Request) (Invoi
 }
 
 // Extracts the authorized user's ID from the request (JWT).
-func (a Adapter) currentUser(r *http.Request) (string, error) {
-	token := ExtractJwt(r.Header)
-	uid := Claim(token, "sub")
-	return uid, nil
+func (a Adapter) currentUser(ctx context.Context) string {
+	claims, ok := ctx.Value(Key).(Claims)
+	if !ok {
+		log.Println("claims missing from context")
+		return ""
+	}
+	return claims.Subject
 }
 
 //=============================================================================
@@ -290,8 +293,8 @@ func (a Adapter) readRate(r *http.Request) (domain.Rate, error) {
 // for a user.
 func (a Adapter) ActivitiesHandler(uc usecase.Activities) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		uid, err := a.currentUser(r)
-		if err != nil {
+		uid := a.currentUser(ctx)
+		if len(uid) < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 		// Runs the usecase to get the user's registered activities.
@@ -342,8 +345,8 @@ func (a Adapter) ActivitiesHandler(uc usecase.Activities) Handler {
 // CreateActivityHandler returns a handler that knows how to create an activity.
 func (a Adapter) CreateActivityHandler(uc usecase.CreateActivity) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		uid, err := a.currentUser(r)
-		if err != nil {
+		uid := a.currentUser(ctx)
+		if len(uid) < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 		act, err := a.readActivity(r, uid)
@@ -413,8 +416,8 @@ func (a Adapter) DeleteBookingHandler(uc usecase.DeleteBooking) Handler {
 // CreateCustomerHandler returns a handler that knows how to create a customer.
 func (a Adapter) CreateCustomerHandler(uc usecase.CreateCustomer) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		uid, err := a.currentUser(r)
-		if err != nil {
+		uid := a.currentUser(ctx)
+		if len(uid) < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 		customer, err := a.readCustomer(r, uid)
@@ -488,8 +491,8 @@ func (a Adapter) GetInvoiceHandler(uc usecase.GetInvoice) Handler {
 // UpdateInvoiceHandler returns a handler that knows how to update an ivoice.
 func (a Adapter) UpdateInvoiceHandler(updateInvoice usecase.UpdateInvoice) Handler {
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		uid, err := a.currentUser(r)
-		if err != nil {
+		uid := a.currentUser(ctx)
+		if len(uid) < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 		// extract invoiceId from the URI

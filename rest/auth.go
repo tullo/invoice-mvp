@@ -17,8 +17,21 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/pkg/errors"
 	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
 	"github.com/tullo/invoice-mvp/identityprovider/secret"
+)
+
+// ctxKey represents the type of value for the context key.
+type ctxKey int
+
+// Key is used to store/retrieve a Claims value from a context.Context.
+const Key ctxKey = 1
+
+// These are the expected values for Claims.Roles.
+const (
+	RoleAdmin = "ADMIN"
+	RoleUser  = "USER"
 )
 
 var (
@@ -27,6 +40,39 @@ var (
 	km       map[string]fusionauth.Key
 	realm    string
 )
+
+// Claims represents the authorization claims transmitted via a JWT.
+type Claims struct {
+	Roles []string `json:"roles"`
+	jwt.StandardClaims
+}
+
+// Valid is called during the parsing of a token.
+func (c Claims) Valid(helper *jwt.ValidationHelper) error {
+	for _, r := range c.Roles {
+		switch r {
+		case RoleAdmin, RoleUser: // Role is valid.
+		default:
+			return fmt.Errorf("invalid role %q", r)
+		}
+	}
+	if err := c.StandardClaims.Valid(helper); err != nil {
+		return errors.Wrap(err, "validating standard claims")
+	}
+	return nil
+}
+
+// Authorized returns true if claims has at least one of the provided roles.
+func (c Claims) Authorized(roles ...string) bool {
+	for _, has := range c.Roles {
+		for _, want := range roles {
+			if has == want {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 // Realm returns the configured realm by consulting the
 // environment variable "AUTH_REALM".
@@ -164,8 +210,10 @@ func digestParts(s string) map[string]string {
 func JWTAuth(next Handler) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		token := ExtractJwt(r.Header)
-		if verifyJWT(token) {
-			next(r.Context(), w, r)
+		if claims, ok := verifyJWT(token); ok {
+			// Add claims to the context so they can be retrieved later.
+			ctx = context.WithValue(ctx, Key, claims)
+			next(ctx, w, r)
 			return
 		}
 		w.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", realm))
@@ -199,48 +247,35 @@ func HMACKeyFunc(t *jwt.Token) (interface{}, error) {
 	return []byte(secret.Shared), nil
 }
 
-func verifyJWT(s string) bool {
-	//	log.Println("verifyJWT:", s)
+func verifyJWT(s string) (Claims, bool) {
+	var claims Claims
 	if len(s) == 0 {
 		log.Println("Got an empty token: unable to verify")
-		return false
+		return claims, false
 	}
 
 	// Verify unparsed token parts.
 	parts := strings.Split(s, ".")
 	if len(parts) < 3 {
 		log.Println("Invalid token parts count: unable to verify")
-		return false
+		return claims, false
 	}
 
 	var po []jwt.ParserOption
 	po = append(po, jwt.WithIssuer(IDPIssuer()))
 	po = append(po, jwt.WithAudience(IDPAudience()))
-
-	// Parse and validate token using keyfunc.
-	t, err := jwt.Parse(s, RS256KeyFunc, po...)
-
-	return err == nil && t.Valid
-}
-
-// Claim returns JWT claim matching the key parameter.
-func Claim(s string, key string) string {
-	// Parse and validate token using keyfunc.
-	var po []jwt.ParserOption
-	po = append(po, jwt.WithIssuer(IDPIssuer()))
-	po = append(po, jwt.WithAudience(IDPAudience()))
-	t, err := jwt.Parse(s, RS256KeyFunc, po...)
+	t, err := jwt.ParseWithClaims(s, &claims, RS256KeyFunc, po...)
 	if err != nil {
-		return ""
+		log.Println("Token parsing:", err)
+		return claims, false
 	}
 
-	if claims, ok := t.Claims.(jwt.MapClaims); ok {
-		if claims[key] != nil {
-			return claims[key].(string) // map[string]interface{}
-		}
+	if !t.Valid {
+		log.Println("token is not valid")
+		return claims, false
 	}
 
-	return ""
+	return claims, t.Valid
 }
 
 // OAuth2AccessCodeGrant decorator makes sure the redirect URI is valid.
