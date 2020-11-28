@@ -3,14 +3,55 @@ package roles
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/tullo/invoice-mvp/domain"
 	"github.com/tullo/invoice-mvp/rest"
 )
+
+// These are the expected values for Claims.Roles.
+const (
+	RoleAdmin = "ADMIN"
+	RoleUser  = "USER"
+)
+
+// Claims represents the authorization claims transmitted via a JWT.
+type Claims struct {
+	Roles []string `json:"roles"`
+	jwt.StandardClaims
+}
+
+// Valid is called during the parsing of a token.
+func (c Claims) Valid(helper *jwt.ValidationHelper) error {
+	for _, r := range c.Roles {
+		switch r {
+		case RoleAdmin, RoleUser: // Role is valid.
+		default:
+			return fmt.Errorf("invalid role %q", r)
+		}
+	}
+	if err := c.StandardClaims.Valid(helper); err != nil {
+		return errors.Wrap(err, "validating standard claims")
+	}
+	return nil
+}
+
+// Authorized returns true if claims has at least one of the provided roles.
+func (c Claims) Authorized(roles ...string) bool {
+	for _, has := range c.Roles {
+		for _, want := range roles {
+			if has == want {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 // RoleRepository is a small interface used for assertions.
 type RoleRepository interface {
@@ -33,19 +74,22 @@ func AssertAdmin(next rest.Handler) rest.Handler {
 
 func isAdmin(s string) bool {
 	// Parse and validate token using keyfunc.
-	t, err := jwt.Parse(s, rest.HMACKeyFunc)
+	var claims Claims
+	var po []jwt.ParserOption
+	po = append(po, jwt.WithIssuer(rest.IDPIssuer()))
+	po = append(po, jwt.WithAudience(rest.IDPAudience()))
+	token, err := jwt.ParseWithClaims(s, &claims, rest.RS256KeyFunc, po...)
 	if err != nil {
+		log.Println("parsing token", err)
 		return false
 	}
 
-	// Extract admin claim.
-	if cm, ok := t.Claims.(jwt.MapClaims); ok {
-		if cm["admin"] != nil {
-			return cm["admin"].(bool) // map[string]interface{}
-		}
+	if !token.Valid {
+		log.Println("token is not valid")
+		return false
 	}
 
-	return false
+	return claims.Authorized(RoleAdmin)
 }
 
 // AssertOwnsInvoice decorator

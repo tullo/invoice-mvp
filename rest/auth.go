@@ -42,9 +42,9 @@ func Realm() string {
 	return realm
 }
 
-// idpAudience returns the configured issuer by consulting the
+// IDPAudience returns the configured issuer by consulting the
 // environment variable "IDP_ISSUER".
-func idpAudience() string {
+func IDPAudience() string {
 	if len(audience) > 0 {
 		return audience
 	}
@@ -56,9 +56,9 @@ func idpAudience() string {
 	return audience
 }
 
-// tokenIssuer returns the configured issuer by consulting the
+// IDPIssuer returns the configured issuer by consulting the
 // environment variable "IDP_ISSUER".
-func idpIssuer() string {
+func IDPIssuer() string {
 	if len(issuer) > 0 {
 		return issuer
 	}
@@ -214,8 +214,8 @@ func verifyJWT(s string) bool {
 	}
 
 	var po []jwt.ParserOption
-	po = append(po, jwt.WithIssuer(idpIssuer())) // rest.Realm()
-	po = append(po, jwt.WithAudience(idpAudience()))
+	po = append(po, jwt.WithIssuer(IDPIssuer()))
+	po = append(po, jwt.WithAudience(IDPAudience()))
 
 	// Parse and validate token using keyfunc.
 	t, err := jwt.Parse(s, RS256KeyFunc, po...)
@@ -226,7 +226,10 @@ func verifyJWT(s string) bool {
 // Claim returns JWT claim matching the key parameter.
 func Claim(s string, key string) string {
 	// Parse and validate token using keyfunc.
-	t, err := jwt.Parse(s, RS256KeyFunc)
+	var po []jwt.ParserOption
+	po = append(po, jwt.WithIssuer(IDPIssuer()))
+	po = append(po, jwt.WithAudience(IDPAudience()))
+	t, err := jwt.Parse(s, RS256KeyFunc, po...)
 	if err != nil {
 		return ""
 	}

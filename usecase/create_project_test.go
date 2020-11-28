@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tullo/invoice-mvp/database"
 	"github.com/tullo/invoice-mvp/domain"
+	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
 	"github.com/tullo/invoice-mvp/rest"
 	"github.com/tullo/invoice-mvp/roles"
 	"github.com/tullo/invoice-mvp/usecase"
@@ -59,12 +62,21 @@ func TestHttpCreateProjectAuthorized(t *testing.T) {
 	setupBaseData(r)
 	createProject := usecase.NewCreateProject(r)
 
+	// Login to IDM
+	data := make(url.Values)
+	data.Set("loginId", os.Getenv("MVP_USERNAME"))
+	data.Set("password", os.Getenv("MVP_PASSWORD"))
+	auth, err := fusionauth.Login(data)
+	if err != nil {
+		t.Error(err)
+	}
+
 	// Prepare HTTP-Request
 	p := domain.Project{CustomerID: customer, Name: "Testing"}
 	bs, _ := json.Marshal(&p)
 	req, _ := http.NewRequest("POST", fmt.Sprintf("/customers/%d/projects", customer), bytes.NewReader(bs))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", adminToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.AccessToken))
 
 	//=========================================================================
 	// Add project using POST request

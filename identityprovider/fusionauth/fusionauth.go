@@ -182,7 +182,7 @@ func Login(data url.Values) (AuthInfo, error) {
 
 	grant, err := accessCodeGrant(data)
 	if err != nil {
-		log.Println("9999999999", err)
+		log.Println("access code grant retrieval failed:", err)
 		return auth, err
 	}
 

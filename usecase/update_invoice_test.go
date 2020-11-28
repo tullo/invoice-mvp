@@ -4,14 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/tullo/invoice-mvp/database"
 	"github.com/tullo/invoice-mvp/domain"
+	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
 	"github.com/tullo/invoice-mvp/rest"
 	"github.com/tullo/invoice-mvp/usecase"
 )
@@ -31,16 +36,35 @@ const (
 	act3
 )
 
+func TestMain(m *testing.M) {
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Println("Error loading .env file")
+		os.Exit(1)
+	}
+	code := m.Run()
+	os.Exit(code)
+}
+
 func setupBaseData(r *database.FakeRepository) {
+	var uid string
+	if v, ok := os.LookupEnv("USER_ID"); ok {
+		uid = v
+	}
+	if len(uid) != len(user) {
+		// Fallback test user.
+		uid = user
+	}
+
 	// Customers
-	r.CreateCustomer(domain.Customer{ID: customer, Name: "3skills", UserID: user})
+	r.CreateCustomer(domain.Customer{ID: customer, Name: "3skills", UserID: uid})
 	// Projects
 	r.CreateProject(domain.Project{ID: pro1, Name: "Instanfoo.com", CustomerID: customer})
 	r.CreateProject(domain.Project{ID: pro2, Name: "Covid19tracker.biz", CustomerID: customer})
 	// Activities
-	r.CreateActivity(domain.Activity{ID: act1, Name: "Programming", UserID: user})
-	r.CreateActivity(domain.Activity{ID: act2, Name: "Quality control", UserID: user})
-	r.CreateActivity(domain.Activity{ID: act3, Name: "Project management", UserID: user})
+	r.CreateActivity(domain.Activity{ID: act1, Name: "Programming", UserID: uid})
+	r.CreateActivity(domain.Activity{ID: act2, Name: "Quality control", UserID: uid})
+	r.CreateActivity(domain.Activity{ID: act3, Name: "Project management", UserID: uid})
 	// Project 1
 	r.CreateRate(domain.Rate{ProjectID: pro1, ActivityID: act1, Price: 60}) // Programming
 	r.CreateRate(domain.Rate{ProjectID: pro1, ActivityID: act2, Price: 55}) // Quality control
@@ -110,9 +134,11 @@ func TestAggregateBookings(t *testing.T) {
 	i.Status = "ready for aggregation"
 	r.UpdateInvoice(i)
 
+	userID := r.CustomerByID(customer).UserID
+
 	//=========================================================================
 	// Run UpdateInvoice use case
-	err = uc.Run(user, i)
+	err = uc.Run(userID, i)
 	if err != nil {
 		t.Error(err)
 	}
@@ -158,11 +184,20 @@ func TestHttpInvoiceAggregation(t *testing.T) {
 	// advance invoice state
 	i.Status = "ready for aggregation"
 
+	// Login to IDM
+	data := make(url.Values)
+	data.Set("loginId", os.Getenv("MVP_USERNAME"))
+	data.Set("password", os.Getenv("MVP_PASSWORD"))
+	auth, err := fusionauth.Login(data)
+	if err != nil {
+		t.Error(err)
+	}
+
 	// Prepare HTTP-Request
 	bs, _ := json.Marshal(&i)
 	req, _ := http.NewRequest("PUT", "/customers/1/invoices/1", bytes.NewReader(bs))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", adminToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.AccessToken))
 
 	//=========================================================================
 	// Update invoice using PUT request
