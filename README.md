@@ -6,8 +6,9 @@ A minimum viable product for invoicing.
 
 ## Level-3: HyperMedia/HATEOAS
 
-- 9th iteration [HTTP Response Caching](https://github.com/tullo/invoice-mvp/tree/a73ff21913bc54feea14d87101eaf1ca319b1900) (the current mvp implementation)
-- 8th iteration [User Authorisation](https://github.com/tullo/invoice-mvp/tree/326343f99c518ea4b6cbfd706f790cc296fe03aa)
+- 10th iteration [User AuthN & AuthZ with IDP service](https://github.com/tullo/invoice-mvp/tree/d97ea289e094f5f44e8ae9fd4a527eff20a6e4f8) (the current mvp implementation)
+- 9th iteration [HTTP Response Caching](https://github.com/tullo/invoice-mvp/tree/a73ff21913bc54feea14d87101eaf1ca319b1900)
+- 8th iteration [User Authorization](https://github.com/tullo/invoice-mvp/tree/326343f99c518ea4b6cbfd706f790cc296fe03aa)
 - 7th iteration [Transport Layer Encryption and Server Authn](https://github.com/tullo/invoice-mvp/tree/0a5848995a5056fc2c62b1fba3572c4b8629faab)
 - 6th iteration [Authentication: Basic, Digest, JWT](https://github.com/tullo/invoice-mvp/tree/db1c1f28fb9b5270cf6bb6ee6dc4c12f17a93303)
 - 5th iteration [HAL invoice representation](https://github.com/tullo/invoice-mvp/tree/e0a6377b1b76a0cbb73af9440d76145d048d499d)
