@@ -1,0 +1,32 @@
+version: '3'
+
+networks:
+  db:
+    driver: bridge
+
+services:
+
+  db:
+    image: postgres:13.1-alpine
+#   image: postgres:11.9-alpine
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - db
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - .:/tmp
+volumes:
+  db_data:
+
+# (1) docker-compose -f db_upgrade.yaml exec db pg_dumpall -U {postgres_user} > dump.sql
+# (2) docker-compose -f db_upgrade.yaml down
+# (3) docker volume rm identityprovider_db_data
+# (4) image: postgres:13.1-alpine
+# (5) docker-compose -f db_upgrade.yaml exec db bash
+# (6) psql -U {postgres_user} < /tmp/dump.sql
+# (7) exit
+# (8) docker-compose -f db_upgrade.yaml down
