@@ -1,48 +1,62 @@
 version: '3'
 
 networks:
-  db:
+  fusionauth:
     driver: bridge
 
 services:
+  bootstrap_dependencies:
+    command: fusionauth:9011/api/status
+    depends_on:
+      fusionauth:
+        condition: service_started
+    environment:
+      JSON_TYPE: object # one of [ null, array, boolean, number, object, string ]
+      SLEEP_LENGTH: 1
+      TIMEOUT_LENGTH: 60
+    image: fusionauth/wait-for-json:1.0
+    networks:
+      fusionauth:
 
   db:
-    image: postgres:13.1-alpine
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
-      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    # Un-comment to access the db service directly
-#   ports:
-#     - 5432:5432
+      POSTGRES_USER: ${POSTGRES_USER}
+    image: postgres:13.1-alpine
     networks:
-      - db
+      fusionauth:
     restart: unless-stopped
     volumes:
-      - db_data:/var/lib/postgresql/data
+    - db_data:/var/lib/postgresql/data:rw
+# Un-comment to access the db service directly
+#   ports:
+#     - 5432:5432
 
   fusionauth:
-    image: fusionauth/fusionauth-app:1.21.0
     depends_on:
       db:
-        condition: "service_started"
+        condition: service_started
     environment:
-      DATABASE_URL: jdbc:postgresql://db:5432/fusionauth
-      DATABASE_ROOT_USERNAME: ${POSTGRES_USER}
-      DATABASE_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_ROOT_USERNAME: ${POSTGRES_USER}
+      DATABASE_URL: jdbc:postgresql://db:5432/fusionauth
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
       FUSIONAUTH_APP_MEMORY: ${FUSIONAUTH_APP_MEMORY}
       FUSIONAUTH_APP_RUNTIME_MODE: development
       FUSIONAUTH_APP_URL: http://fusionauth:9011
       SEARCH_TYPE: database
+    image: fusionauth/fusionauth-app:1.23.3
     networks:
-     - db
-    restart: unless-stopped
+      fusionauth:
     ports:
-      - 9011:9011
+    - published: 9011
+      target: 9011
+    restart: unless-stopped
     volumes:
-      - fa_config:/usr/local/fusionauth/config
+    - fa_config:/usr/local/fusionauth/config:rw
+
 volumes:
-  db_data:
-  fa_config:
+  db_data: {}
+  fa_config: {}
