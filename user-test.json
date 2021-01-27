@@ -1,0 +1,14 @@
+{
+  "user": {
+    "active": true,
+    "email": "test@example.com",
+    "password": "PU9KqA3MbzsCxs5",
+    "passwordChangeRequired": false,
+    "tenantId": "${TENANT_ID}",
+    "twoFactorDelivery": "None",
+    "twoFactorEnabled": false,
+    "username": "test",
+    "usernameStatus": "ACTIVE",
+    "verified": true
+  }
+}

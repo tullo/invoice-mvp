@@ -1,0 +1,11 @@
+{
+  "registration": {
+    "applicationId": "${TEST_APP_ID}",
+    "preferredLanguages": [
+      "en",
+      "fr"
+    ],
+    "timezone": "Europe/Copenhagen",
+    "username": "test"
+  }
+}

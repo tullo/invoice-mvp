@@ -1,0 +1,15 @@
+{
+  "registration": {
+    "applicationId": "${INVOICE_APP_ID}",
+    "preferredLanguages": [
+      "en",
+      "fr"
+    ],
+    "roles": [
+      "ADMIN",
+      "USER"
+    ],
+    "timezone": "Europe/Copenhagen",
+    "username": "admin"
+  }
+}
