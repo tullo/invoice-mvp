@@ -28,6 +28,7 @@
   },
   "jwtConfiguration": {
     "accessTokenKeyId": "${SIGNING_KEY_ID}",
+    "idTokenKeyId": "${ID_TOKEN_KEY_ID}",
     "enabled": true,
     "refreshTokenExpirationPolicy": "Fixed",
     "refreshTokenTimeToLiveInMinutes": 43200,

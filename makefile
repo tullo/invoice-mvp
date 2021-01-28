@@ -66,6 +66,7 @@ auth-tenant:
 	@echo "OK"
 
 # 4. Create apps with tenant-ref and signing key ref.
+auth-apps: export ID_TOKEN_KEY_ID=$(shell curl --no-progress-meter -H "Authorization: ${API_KEY}" -H 'ACCEPT: application/json' http://localhost:9011/api/application | jq -r '.applications[] | select( .name == "FusionAuth" ) | .jwtConfiguration.idTokenKeyId')
 auth-apps:
 	@envsubst < auth/app-invoice.json > tmp/app-01.json
 	@envsubst < auth/app-test.json > tmp/app-02.json
