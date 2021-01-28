@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -68,15 +69,13 @@ func tlsTransportConfig() (http.RoundTripper, error) {
 	// Read the CA signed certificate.
 	cert, err := ioutil.ReadFile(filepath.Join(os.Getenv("BASE_DIR"), "localhost+2.pem"))
 	if err != nil {
-		log.Println("Couldn't load certificate file", err)
-		return nil, err
+		return nil, errors.Wrap(err, "loading certificate file")
 	}
 
 	// Add cert to the pool of trusted certificats.
 	certPool := x509.NewCertPool()
 	if ok := certPool.AppendCertsFromPEM(cert); !ok {
-		log.Println("Couldn't append certificate to cert pool")
-		return nil, err
+		return nil, errors.Wrap(err, "appending certificate to cert pool")
 	}
 
 	// Use trusted server certificate for client transport config.
@@ -96,7 +95,7 @@ func Client(tls bool) (*http.Client, error) {
 		t, err := tlsTransportConfig()
 		if err != nil {
 			log.Println("(tls) err:", err)
-			return &c, err
+			return &c, errors.Wrap(err, "creating transport TLS client config")
 		}
 		// Client makes sure to only talk to servers in possession
 		// of the private key used to sign the certificate.
@@ -131,7 +130,7 @@ func accessCodeGrant(data url.Values) (string, error) {
 	payload := form.Encode()
 	req, err := http.NewRequest("POST", AuthorizeEndpoint, strings.NewReader(payload))
 	if err != nil {
-		return code, err
+		return code, errors.Wrap(err, "posting URL-encoded payload")
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(payload)))
@@ -139,36 +138,36 @@ func accessCodeGrant(data url.Values) (string, error) {
 	// HTTP roundtrip, redirects are not followed.
 	var noRedirect http.RoundTripper = &http.Transport{}
 	res, err := noRedirect.RoundTrip(req)
-	res.Body.Close()
+	defer res.Body.Close()
 	if err != nil {
-		return code, err
+		return code, errors.Wrap(err, "posting URL-encoded payload")
 	}
 
 	if res.StatusCode != http.StatusFound {
-		return code, fmt.Errorf("Unexpected response status %d", res.StatusCode)
+		return code, errors.Errorf("Unexpected response status %d", res.StatusCode)
 	}
 	if _, ok := res.Header["Location"]; !ok {
-		return code, fmt.Errorf("Location header not available")
+		return code, errors.New("Location header not available")
 	}
 	if loc, ok := res.Header["Location"]; ok {
 		if len(loc) < 1 {
-			return code, fmt.Errorf("Location value missing")
+			return code, errors.New("Location value missing")
 		}
 	}
 
 	loc := res.Header["Location"][0]
 	u, err := url.Parse(loc)
 	if err != nil {
-		return code, err
+		return code, errors.Wrap(err, "parsing location header")
 	}
 	q := u.Query()
 	if us, ok := q["userState"]; ok {
 		if us[0] != "Authenticated" {
-			return code, fmt.Errorf("Unexpected user state %v", us)
+			return code, errors.Errorf("Unexpected user state %v", us)
 		}
 	}
 	if _, ok := q["code"]; !ok {
-		return code, fmt.Errorf("Access Code Grant not found")
+		return code, errors.Errorf("Access Code Grant not found")
 	}
 
 	return q["code"][0], nil
@@ -182,8 +181,7 @@ func Login(data url.Values) (AuthInfo, error) {
 
 	grant, err := accessCodeGrant(data)
 	if err != nil {
-		log.Println("access code grant retrieval failed:", err)
-		return auth, err
+		return auth, errors.Wrap(err, "access code grant retrieval failed")
 	}
 
 	form := make(url.Values)
@@ -205,38 +203,38 @@ func Login(data url.Values) (AuthInfo, error) {
 
 	client, err := Client(false) // no TLS
 	if err != nil {
-		return auth, err
+		return auth, errors.Wrap(err, "creating client instance")
 	}
 	payload := form.Encode() // URL-encoded payload
 	res, err := client.Post(TokenEndpoint, "application/x-www-form-urlencoded", strings.NewReader(payload))
 	if err != nil {
-		return auth, err
+		return auth, errors.Wrap(err, "posting URL-encoded payload")
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return auth, fmt.Errorf("Unexpected response status %d", res.StatusCode)
+		return auth, errors.Errorf("Unexpected response status %d", res.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return auth, err
+		return auth, errors.Wrap(err, "reading response body")
 	}
 
 	if err := json.Unmarshal(body, &auth); err != nil {
-		return auth, err
+		return auth, errors.Wrap(err, "unmarshalling response body")
 	}
 	if auth.TokenType != "Bearer" {
-		return auth, fmt.Errorf("TokenType not valid %v", auth.TokenType)
+		return auth, errors.Errorf("TokenType not valid %v", auth.TokenType)
 	}
 	if auth.ExpiresIn < 0 {
-		return auth, fmt.Errorf("Token expired %v", auth.ExpiresIn)
+		return auth, errors.Errorf("Token expired %v", auth.ExpiresIn)
 	}
 	if len(auth.UserID) < 1 {
-		return auth, fmt.Errorf("UserID not valid %v", auth.UserID)
+		return auth, errors.Errorf("UserID not valid %v", auth.UserID)
 	}
 	if len(auth.AccessToken) < 1 {
-		return auth, fmt.Errorf("AccessToken not valid %v", auth.AccessToken)
+		return auth, errors.Errorf("AccessToken not valid %v", auth.AccessToken)
 	}
 
 	return auth, nil
@@ -248,20 +246,20 @@ func JSONWebKeySet(jwksURI string) (KeySet, error) {
 	var ks KeySet
 	client, err := Client(false) // no TLS
 	if err != nil {
-		return ks, err
+		return ks, errors.Wrap(err, "creating client instance")
 	}
 	res, err := client.Get(jwksURI)
 	if err != nil {
-		return ks, err
+		return ks, errors.Wrap(err, "retrieving json web key set")
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return ks, err
+		return ks, errors.Wrap(err, "reading response body")
 	}
 
 	if err := json.Unmarshal(body, &ks); err != nil {
-		return ks, err
+		return ks, errors.Wrap(err, "unmarshalling response body")
 	}
 	return ks, nil
 }
@@ -273,21 +271,21 @@ func PublicSigningKey(keyID string) (Key, error) {
 	keyURI := fmt.Sprintf("%s?kid=%s", PublicKeyEndpoint, keyID)
 	client, err := Client(false) // no TLS
 	if err != nil {
-		return key, err
+		return key, errors.Wrap(err, "creating client instance")
 	}
 	res, err := client.Get(keyURI)
 	if err != nil {
-		return key, err
+		return key, errors.Wrap(err, "retrieving public signing key")
 	}
 	// dump, _ := httputil.DumpResponse(res, true)
 	body, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		return key, err
+		return key, errors.Wrap(err, "reading response body")
 	}
 
 	if err := json.Unmarshal(body, &key); err != nil {
-		return key, err
+		return key, errors.Wrap(err, "unmarshalling response body")
 	}
 
 	return key, nil
@@ -317,14 +315,12 @@ func RetrievePublicKeyInstance(keyID string) (Key, error) {
 	var key Key
 	k, err := PublicSigningKey(keyID)
 	if err != nil {
-		log.Println("Could not retrieve public signing key from IDP")
-		return key, err
+		return key, errors.Wrap(err, "Could not retrieve public signing key from IDP")
 	}
 	key.PublicKeyPEM = k.PublicKeyPEM
 	pkInstance, err := jwt.ParseRSAPublicKeyFromPEM([]byte(k.PublicKeyPEM))
 	if err != nil {
-		log.Println("Could not parse public signing key", err)
-		return key, err
+		return key, errors.Wrap(err, "Could not parse public signing key")
 	}
 	key.Instance = pkInstance
 	return key, nil
@@ -337,8 +333,7 @@ func RetrievePublicKeyInstances(km map[string]Key) (map[string]Key, error) {
 	for _, v := range km {
 		key, err := RetrievePublicKeyInstance(v.ID)
 		if err != nil {
-			log.Println("Could not retrieve public signing key instance")
-			return nil, err
+			return nil, errors.Wrap(err, "Could not retrieve public signing key instance")
 		}
 		// add existing key meta data
 		key.Alg = v.Alg
