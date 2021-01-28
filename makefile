@@ -44,58 +44,59 @@ bootstrap_dependencies: identityprovider-up
 
 # 1. Create signing key.
 auth-signing-key:
-	@./key.sh
+	@./auth/key.sh
 	@echo "OK"
 
 # 2. Use default tenant as template.
 auth-tenant-template: export DEFAULT_TENANT_ID=d3b6781e-1356-2f7c-ea1a-04549bb42dcf
 auth-tenant-template:
 	@curl --no-progress-meter -H "Authorization: ${API_KEY}" \
-		http://localhost:9011/api/tenant/${DEFAULT_TENANT_ID} | jq > default-tenant.json
+		http://localhost:9011/api/tenant/${DEFAULT_TENANT_ID} | jq > tmp/default-tenant.json
 	@echo "OK"
 
 # 3. Create tenant.
 # Prepare default-tenant.json with substitutions for:
 # NAME, ISSUER, SIGNING_KEY_ID
+# See example from auth/tenant-substitutions.json
 auth-tenant: export NAME=Invoice MVP
 auth-tenant: export ISSUER=invoice.mvp
 auth-tenant:
-	@envsubst < default-tenant.json > tenant.json
-	@./tenant.sh
+	@envsubst < tmp/default-tenant.json > tmp/tenant.json
+	@./auth/tenant.sh
 	@echo "OK"
 
 # 4. Create apps with tenant-ref and signing key ref.
 auth-apps:
-	@envsubst < app-invoice.json > app-01.json
-	@envsubst < app-test.json > app-02.json
-	@./apps.sh
+	@envsubst < auth/app-invoice.json > tmp/app-01.json
+	@envsubst < auth/app-test.json > tmp/app-02.json
+	@./auth/apps.sh
 	@echo "OK"
 
 # 5. Create users with tenant-ref.
 auth-users:
-	@envsubst < user-admin.json > user-01.json
-	@envsubst < user-user.json > user-02.json
-	@envsubst < user-test.json > user-03.json
-	@./users.sh
+	@envsubst < auth/user-admin.json > tmp/user-01.json
+	@envsubst < auth/user-user.json > tmp/user-02.json
+	@envsubst < auth/user-test.json > tmp/user-03.json
+	@./auth/users.sh
 	@echo "OK"
 
 # 6. Create user regs with tenant-ref.
-auth-user-registration:
-	@envsubst < reg-admin.json > reg-01.json
-	@envsubst < reg-user.json > reg-02.json
-	@envsubst < reg-test.json > reg-03.json
-	@./registrations.sh
+auth-users-registrations:
+	@envsubst < auth/reg-admin.json > tmp/reg-01.json
+	@envsubst < auth/reg-user.json > tmp/reg-02.json
+	@envsubst < auth/reg-test.json > tmp/reg-03.json
+	@./auth/registrations.sh
 	@echo "OK"
 
 # 7. Create .env config file.
-env: export IID=$(shell cat apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientId')
-env: export ISECRET=$(shell cat apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientSecret')
-env: export IUSER=$(shell cat user-admin.json | jq '.user.email')
-env: export IPASS=$(shell cat user-admin.json | jq '.user.password')
-env: export TID=$(shell cat apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientId')
-env: export TSECRET=$(shell cat apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientSecret')
-env: export TUSER=$(shell cat user-test.json | jq '.user.email')
-env: export TPASS=$(shell cat user-test.json | jq '.user.password')
+env: export IID=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientId')
+env: export ISECRET=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientSecret')
+env: export IUSER=$(shell cat auth/user-admin.json | jq '.user.email')
+env: export IPASS=$(shell cat auth/user-admin.json | jq '.user.password')
+env: export TID=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientId')
+env: export TSECRET=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientSecret')
+env: export TUSER=$(shell cat auth/user-test.json | jq '.user.email')
+env: export TPASS=$(shell cat auth/user-test.json | jq '.user.password')
 env:
 	@echo "# Invoice App" > env
 	@echo "BASE_DIR=$(PWD)" >> env
