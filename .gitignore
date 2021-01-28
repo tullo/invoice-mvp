@@ -19,17 +19,6 @@
 
 # TLS key and cerificate
 *.pem
-key.json
-tenant.json
-tenant-01.json
-apps.json
-default-tenant.json
-app-01.json
-app-02.json
-user-01.json
-user-02.json
-user-03.json
-reg-01.json
-reg-02.json
-reg-03.json
-users.json
+
+# Temporary files
+tmp/

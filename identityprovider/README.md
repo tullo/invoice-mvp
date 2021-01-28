@@ -20,12 +20,10 @@ This MVP uses FusionAuth to provide an external service for user identity handli
 
 To launch the service follow these steps:
 
-1. `docker-compose up`
-1. Go to http://localhost:9011/ and complete the setup-wizard
-1. Create "Invoice MVP" app: http://localhost:9011/admin/application/
-1. Generate a RSA key pair: http://localhost:9011/admin/key/
-    1. Name: "Invoice MVP Keys"
-    1. Issuer: "invoice.mvp"
-1. Edit the "Invoice MVP" app. Click on *JWT* tab and choose the app specific key for "Access Token signing key" field.
-1. *Save* to persist the change.
-1. *View* to see settings like login url, clientId, etc.
+1. `make identityprovider-up`
+1. Go to http://localhost:9011/ and complete the setup-wizard.
+1. Create API key named "Invoice MVP" at http://localhost:9011/admin/api/
+1. Copy the API key id.
+1. Edit the makefile and replace the exported API_KEY with key from step 4.
+1. Bootstrap Identity Provider config by running through the makefile targets in the "Auth Bootstrapping" section.
+1. Finally: run `make test` to execute unit & integration tests.
