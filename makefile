@@ -3,7 +3,9 @@ SHELL = /bin/bash -o pipefail
 # make -np 2>&1 | less
 
 # Generate an api key via FA UI and paste here.
-export API_KEY=ecNmeuOEhG2rZgggPZkPoes3sNK4G522bIMAbTEOll8w-sWzGI6rSbPe
+export API_KEY=1JbYAOP3c19JuT5jrG7ZlNsGxnoAX3W4kAdUvKwytPgUVjYDWkLXkcBU
+export DEFAULT_TENANT_ID=923d9602-7524-0085-e108-18201f81d3d5
+# The following 7 fixed IDs will be used during aut bootstrapping. 
 export SIGNING_KEY_ID=032f0a62-e111-4144-9f37-ca55112383ec
 export TENANT_ID=15b07c80-66ca-1a4b-f313-f519f5bf37cd
 export INVOICE_APP_ID=1e9dbfe9-8f90-4cc4-90c1-5b6a4ca029c9
@@ -12,8 +14,9 @@ export USER_01_ID=f73e4176-915c-423d-a092-ae97f0c8de88
 export USER_02_ID=d68df2ec-d79a-4fbd-b290-22ae3a91532b
 export USER_03_ID=206563d6-1636-4fc2-9bd8-0a68cbdf6ea3
 
-test: bootstrap_dependencies
-	go test -v -count=1 ./...
+# Start FA with 'make bootstrap_dependencies' before running the test goal.
+test:
+	@go test -v -count=1 ./...
 
 go-deps-reset:
 	@git checkout -- go.mod
@@ -28,6 +31,12 @@ go-deps-upgrade:
 
 go-mod-tidy:
 	@go mod tidy
+
+identityprovider-config:
+	cd identityprovider/; docker-compose config
+
+identityprovider-logs:
+	cd identityprovider/; docker-compose logs -f
 
 identityprovider-down:
 	cd identityprovider/; docker-compose down
@@ -48,7 +57,6 @@ auth-signing-key:
 	@echo "OK"
 
 # 2. Use default tenant as template.
-auth-tenant-template: export DEFAULT_TENANT_ID=d3b6781e-1356-2f7c-ea1a-04549bb42dcf
 auth-tenant-template:
 	@curl --no-progress-meter -H "Authorization: ${API_KEY}" \
 		http://localhost:9011/api/tenant/${DEFAULT_TENANT_ID} | jq > tmp/default-tenant.json
@@ -90,14 +98,14 @@ auth-users-registrations:
 	@echo "OK"
 
 # 7. Create .env config file.
-env: export IID=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientId')
-env: export ISECRET=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientSecret')
-env: export IUSER=$(shell cat auth/user-admin.json | jq '.user.email')
-env: export IPASS=$(shell cat auth/user-admin.json | jq '.user.password')
-env: export TID=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientId')
-env: export TSECRET=$(shell cat tmp/apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientSecret')
-env: export TUSER=$(shell cat auth/user-test.json | jq '.user.email')
-env: export TPASS=$(shell cat auth/user-test.json | jq '.user.password')
+env: export IID=$$(cat tmp/apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientId')
+env: export ISECRET=$$(cat tmp/apps.json | jq -c '.[] | select( .id == "${INVOICE_APP_ID}" ) | .oauthConfiguration.clientSecret')
+env: export IUSER=$$(cat auth/user-admin.json | jq '.user.email')
+env: export IPASS=$$(cat auth/user-admin.json | jq '.user.password')
+env: export TID=$$(cat tmp/apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientId')
+env: export TSECRET=$$(cat tmp/apps.json | jq -c '.[] | select( .id == "${TEST_APP_ID}" ) | .oauthConfiguration.clientSecret')
+env: export TUSER=$$(cat auth/user-test.json | jq '.user.email')
+env: export TPASS=$$(cat auth/user-test.json | jq '.user.password')
 env:
 	@echo "# Invoice App" > env
 	@echo "BASE_DIR=$(PWD)" >> env
