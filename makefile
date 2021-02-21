@@ -127,3 +127,11 @@ env:
 	@echo "TEST_CLIENT_ID=${TID}" >> env
 	@echo "TEST_CLIENT_SECRET=${TSECRET}" >> env
 	@mv env .env
+
+sops-encrypt:
+	@$$(go env GOPATH)/bin/sops --verbose --output-type=dotenv -e .env > .enc.env
+	@$$(go env GOPATH)/bin/sops --verbose --output-type=dotenv -e identityprovider/.env > identityprovider/.enc.env
+
+sops-decrypt:
+	@$$(go env GOPATH)/bin/sops --verbose --output-type=dotenv -d .enc.env > .env
+	@$$(go env GOPATH)/bin/sops --verbose --output-type=dotenv -d identityprovider/.enc.env > identityprovider/.env
