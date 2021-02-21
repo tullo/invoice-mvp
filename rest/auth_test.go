@@ -44,10 +44,11 @@ func TestAuthAccessCodeGrant(t *testing.T) {
 
 	var noRedirect http.RoundTripper = &http.Transport{}
 	res, err := noRedirect.RoundTrip(r)
-	res.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusFound {
 		t.Fatal("Unexpected response status", res.StatusCode)
 	}
