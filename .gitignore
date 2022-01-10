@@ -22,3 +22,6 @@
 
 # Temporary files
 tmp/
+
+# Go binary
+invoice-mvp
