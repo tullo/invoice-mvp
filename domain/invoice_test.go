@@ -3,8 +3,8 @@ package domain_test
 import (
 	"testing"
 
+	"github.com/go-playground/assert/v2"
 	"github.com/tullo/invoice-mvp/domain"
-	"gopkg.in/go-playground/assert.v1"
 )
 
 func TestAddPosition(t *testing.T) {

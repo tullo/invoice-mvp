@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-playground/assert/v2"
 	"github.com/joho/godotenv"
 	"github.com/tullo/invoice-mvp/identityprovider/fusionauth"
 	"github.com/tullo/invoice-mvp/rest"
-	"gopkg.in/go-playground/assert.v1"
 )
 
 func TestAuthAccessCodeGrant(t *testing.T) {
