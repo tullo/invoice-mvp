@@ -33,19 +33,19 @@ go-mod-tidy:
 	@go mod tidy
 
 identityprovider-config:
-	cd identityprovider/; docker-compose config
+	cd identityprovider/; docker compose config
 
 identityprovider-logs:
-	cd identityprovider/; docker-compose logs -f
+	cd identityprovider/; docker compose logs -f
 
 identityprovider-down:
-	cd identityprovider/; docker-compose down
+	cd identityprovider/; docker compose down
 
 identityprovider-up:
-	cd identityprovider/; docker-compose up -d --remove-orphans
+	cd identityprovider/; docker compose up -d --remove-orphans
 
 bootstrap_dependencies: identityprovider-up
-	cd identityprovider/; docker-compose run --rm bootstrap_dependencies
+	cd identityprovider/; docker compose run --rm bootstrap_dependencies
 
 # =============================================================================
 # Auth Bootstrapping ==========================================================
