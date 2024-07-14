@@ -1,6 +1,6 @@
 module github.com/tullo/invoice-mvp
 
-go 1.20
+go 1.22
 
 require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
