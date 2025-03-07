@@ -47,7 +47,7 @@ services:
       FUSIONAUTH_APP_RUNTIME_MODE: development
       FUSIONAUTH_APP_URL: http://fusionauth:9011
       SEARCH_TYPE: database
-    image: fusionauth/fusionauth-app:1.55.1
+    image: fusionauth/fusionauth-app:1.56.0
     networks:
       fusionauth:
     ports:
